@@ -1,4 +1,7 @@
 import re
+from enum import Enum
+from macros import *
+
 
 class LOLCodeParser:
     def __init__(self, lexer):
@@ -31,9 +34,9 @@ class LOLCodeParser:
 
     def program(self):
         # Program → 'HAI' statement_list 'KTHXBYE'
-        self.match('Program Start Delimiter')
+        self.match(HAI)
         self.statement_list()
-        self.match('Program End Delimiter')
+        self.match(KTHXBYE)
         print("Program ended cleanly.")
 
     def statement_list(self):

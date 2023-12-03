@@ -2,6 +2,7 @@
 from parserFunction import LOLCodeParser
 import sys
 import re
+from macros import *
 
 
 class LOLCodeLexer:
@@ -111,10 +112,10 @@ class LOLCodeLexer:
                         elif token_type == 'String':
                             string_literal = token_value
                             self.string_literals.append(string_literal)
-                        elif token_type == 'Single Line Comment Delimiter':
+                        elif token_type == BTW:  # 'Single Line Comment Delimiter'
                             line = ''  # Remove the rest of the line
                             break
-                        elif token_type == 'Multi Line Comment Start Delimiter':
+                        elif token_type == OBTW:  # 'Multi Line Comment Start Delimiter'
                             while line:
                                 match = re.match(r'^(TLDR)', line)
                                 if match:
