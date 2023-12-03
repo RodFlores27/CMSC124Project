@@ -1,5 +1,4 @@
 import re
-from enum import Enum
 from macros import *
 
 
@@ -19,8 +18,8 @@ class LOLCodeParser:
             # Consume the token
             self.consume_token()
         else:
-            raise SyntaxError(
-                f"Expected {expected_type}, but found {self.current_token()}")
+            print(
+                f"Syntax Error: Expected {expected_type}, but found {self.current_token()}")
 
     def current_token(self):
         # Get the current token
@@ -35,9 +34,15 @@ class LOLCodeParser:
     def program(self):
         # Program → 'HAI' statement_list 'KTHXBYE'
         self.match(HAI)
+        self.data_segment()
         self.statement_list()
         self.match(KTHXBYE)
         print("Program ended cleanly.")
+
+    def data_segment(self):
+        self.match(WAZZUP)
+        self.variable_declaration()
+        self.match(BUHBYE)
 
     def statement_list(self):
         # statement_list → statement statement_list | ε
@@ -55,10 +60,9 @@ class LOLCodeParser:
             self.print_statement()
 
     def variable_declaration(self):
-        # variable_declaration → 'I HAS A' Identifier 'ITZ' expression
-        self.match('Variable Declaration')
-        self.match('Variable Assignment')
-        self.expression()
+        # i has a varident (itz (<varident | <expr> | <literal>))?
+        self.match(I_HAS_A)
+        self.match(IDENTIFIER)
 
     def print_statement(self):
         # print_statement → 'VISIBLE' expression 'BUHBYE'

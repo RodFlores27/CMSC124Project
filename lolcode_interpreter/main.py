@@ -83,8 +83,6 @@ class LOLCodeLexer:
             # identifiers
             # Pattern for capturing variable identifiers
             (r'^[a-zA-Z][a-zA-Z0-9_]*', 'Identifier'),
-            # (r'^\b[a-zA-Z_][a-zA-Z0-9_]*\b', 'FUNCTION_IDENTIFIER'),  # Pattern for capturing function identifiers
-            # (r'^\b[a-zA-Z_][a-zA-Z0-9_]*\b', 'LOOP_IDENTIFIER'),  # Pattern for capturing parameter identifiers
         ]
 
         # Split the source code into lines
