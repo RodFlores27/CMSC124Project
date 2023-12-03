@@ -89,6 +89,8 @@ class LOLCodeLexer:
         lines = self.source_code.split('\n')
         # print(f"Lines: {lines}\n\n")
 
+        in_multiline_comment = False
+
         # Tokenize each line
         for line in lines:
             line = line.strip()
@@ -98,11 +100,18 @@ class LOLCodeLexer:
                     if match:
                         token_value = match.group().strip()  # Remove leading and trailing whitespace
 
+                        if in_multiline_comment:
+                            if token_type == TLDR:  # 'Multi Line Comment End Delimiter'
+                                in_multiline_comment = False
+                            line = line[match.end():].lstrip()
+                            break
+
                         if token_type == 'String':
                             # Remove the start and end quotes
                             token_value = token_value[1:-1]
 
-                        self.tokens.append(f"{token_type} - {token_value}")
+                        if token_type not in {BTW, OBTW}:
+                            self.tokens.append(f"{token_type} - {token_value}")
 
                         if token_type == 'Identifier':
                             variable_name = match.group().strip()  # Remove leading and trailing whitespace
@@ -114,13 +123,7 @@ class LOLCodeLexer:
                             line = ''  # Remove the rest of the line
                             break
                         elif token_type == OBTW:  # 'Multi Line Comment Start Delimiter'
-                            while line:
-                                match = re.match(r'^(TLDR)', line)
-                                if match:
-                                    break
-                                else:
-                                    line = line[match.end():].lstrip()
-                            break
+                            in_multiline_comment = True
 
                         # Remove the matched token from the line
                         line = line[match.end():].lstrip()

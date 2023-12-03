@@ -36,20 +36,19 @@ class LOLCodeParser:
         self.match(HAI)
         self.data_segment()
         self.statement_list()
-        self.match(KTHXBYE)
+        # self.match(KTHXBYE)
         print("Program ended cleanly.")
 
     def data_segment(self):
         self.match(WAZZUP)
-        self.variable_declaration()
+        self.variable_declaration() 
         self.match(BUHBYE)
 
     def statement_list(self):
         # statement_list → statement statement_list | ε
-        if self.current_token().startswith(
-            ('Variable Declaration', 'Numbr', 'Output Operator',
-             'Variable Declaration Start Delimiter')
-        ):
+        while self.current_token_index < len(self.tokens):
+            if self.current_token() in (KTHXBYE, BUHBYE):
+                break
             self.statement()
 
     def statement(self):
@@ -58,25 +57,68 @@ class LOLCodeParser:
             self.variable_declaration()
         elif self.current_token().startswith('Output Operator'):
             self.print_statement()
+        elif self.current_token().startswith('Program End Delimiter'):
+            self.match(KTHXBYE)
 
     def variable_declaration(self):
         # i has a varident (itz (<varident | <expr> | <literal>))?
         self.match(I_HAS_A)
+        self.match(IDENTIFIER) # Ended here
+        if self.current_token().startswith(ITZ):
+            self.consume_token()
+            self.expression()  
+        
+    def lolInput(self):
+        self.match(GIMMEH)
         self.match(IDENTIFIER)
 
     def print_statement(self):
         # print_statement → 'VISIBLE' expression 'BUHBYE'
-        self.match('Output Operator')
+        self.match(VISIBLE)
         self.expression()
 
     def expression(self):
-        # expression → Numbr | Identifier
+        # expression → Numbr | Identifier | String | Troof | Numbar
         if self.current_token().startswith('Numbr'):
             self.match('Numbr')
         elif self.current_token().startswith('Identifier'):
             self.match('Identifier')
         elif self.current_token().startswith('String'):
             self.match('String')
+        elif self.current_token().startswith('Troof'):
+            self.match('Troof')
+        elif self.current_token().startswith('Numbar'):
+            self.match('Numbar')
+        elif self.current_token().startswith('Literal'):
+            self.match('Literal')
         else:
             raise SyntaxError(
                 f"Unexpected token in expression: {self.current_token()}")
+        
+    
+    ################################################################
+    # The following methods are not used in the current version.   #
+    # They are included here for completeness.                     #
+    ################################################################
+
+    def arithmetic_expr(self):
+        self.arithmetic_operator()
+        self.match(NUMBR|NUMBAR|self.arithmetic_expr())
+        self.match(AN)
+        self.match(NUMBR|NUMBAR|self.arithmetic_expr())
+
+    def arithmetic_operator(self):
+        self.match(SUM_OF) or self.match(DIFF_OF)
+
+    def str_concat(self):
+        self.match(SMOOSH)
+        self.match(STRING) or self.str_concat()
+        self.match(AN)
+        self.match(STRING) or self.str_concat()
+
+    def type_cast(self):
+        if self.match(MAEK):
+            self.consume_token()
+            self.match(IDENTIFIER)
+            self.match(A)
+            self.match(TYPE) # Literal

@@ -1,3 +1,5 @@
 HAI
-VISIBLE "You said :"" AN VAR AN ":" !!"
+    WAZZUP
+        I HAS A temp ITZ 2
+    BUHBYE
 KTHXBYE
