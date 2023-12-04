@@ -60,14 +60,14 @@ class LOLCodeLexer:
             (r'^UPPIN', 'Increment Operator'),
             (r'^NERFIN', 'Decrement Operator'),
             (r'^(YR)', 'Loop Variable Declaration'),
-            (r'^TIL', 'Loop Condition Delimiter'),
-            (r'^WILE', 'Loop Condition Delimiter'),
+            (r'^TIL', 'Loop Condition Delimiter 1'),
+            (r'^WILE', 'Loop Condition Delimiter 2'),
             (r'^(IM OUTTA YR)', 'Loop Statement End Delimiter'),
             (r'^((HOW IZ I))', 'Function Declaration Start Delimiter'),
             (r'^((IF U SAY SO))', 'Function Declaration End Delimiter'),
             (r'^(GTFO)', 'Break Statement'),
-            (r'^(FOUND YR)', 'Return Statement Delimiter'),
-            (r'^((I IZ))', 'Return Statement Delimiter'),
+            (r'^(FOUND YR)', 'Return Statement Delimiter 1'),
+            (r'^((I IZ))', 'Return Statement Delimiter 2'),
             (r'^MKAY', 'Function Call Delimiter'),
 
             # literals

@@ -14,6 +14,7 @@ class LOLCodeParser:
 
     def match(self, expected_type):
         # Check if the current token matches the expected type
+        print(self.current_token())
         if self.current_token().startswith(expected_type):
             # Consume the token
             self.consume_token()
@@ -45,7 +46,6 @@ class LOLCodeParser:
         self.match(BUHBYE)
 
     def statement_list(self):
-        # statement_list → statement statement_list | ε
         while self.current_token_index < len(self.tokens):
             if self.current_token().startswith(KTHXBYE) or self.current_token().startswith(BUHBYE):
                 break
@@ -81,7 +81,7 @@ class LOLCodeParser:
         self.match(IDENTIFIER) # Ended here
         if self.current_token().startswith(ITZ):
             self.consume_token()
-            self.expression()  
+            self.expression()
         
     # def lolInput(self):
     #     self.match(GIMMEH)
