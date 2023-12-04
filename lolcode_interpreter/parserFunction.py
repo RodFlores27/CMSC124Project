@@ -36,7 +36,7 @@ class LOLCodeParser:
         self.match(HAI)
         self.data_segment()
         self.statement_list()
-        # self.match(KTHXBYE)
+        self.match(KTHXBYE)
         print("Program ended cleanly.")
 
     def data_segment(self):
@@ -47,7 +47,7 @@ class LOLCodeParser:
     def statement_list(self):
         # statement_list → statement statement_list | ε
         while self.current_token_index < len(self.tokens):
-            if self.current_token() in (KTHXBYE, BUHBYE):
+            if self.current_token().startswith(KTHXBYE) or self.current_token().startswith(BUHBYE):
                 break
             self.statement()
 
@@ -57,8 +57,10 @@ class LOLCodeParser:
             self.variable_declaration()
         elif self.current_token().startswith('Output Operator'):
             self.print_statement()
-        elif self.current_token().startswith('Program End Delimiter'):
-            self.match(KTHXBYE)
+        elif self.current_token().startswith('Input Operator'):
+            self.input_statement()
+        # elif self.current_token().startswith('Program End Delimiter'):
+        #     self.match(KTHXBYE)
 
     def variable_declaration(self):
         # i has a varident (itz (<varident | <expr> | <literal>))?
@@ -68,14 +70,42 @@ class LOLCodeParser:
             self.consume_token()
             self.expression()  
         
-    def lolInput(self):
-        self.match(GIMMEH)
-        self.match(IDENTIFIER)
+    # def lolInput(self):
+    #     self.match(GIMMEH)
+    #     self.match(IDENTIFIER)
 
     def print_statement(self):
         # print_statement → 'VISIBLE' expression 'BUHBYE'
         self.match(VISIBLE)
         self.expression()
+
+    def assignment_statement(self):
+        # The current token should be an identifier
+        self.match('IDENTIFIER')
+        variable_name = self.current_token.value
+
+        # The next token should be 'R'
+        # self.consume_token()
+        self.match('R')
+
+        # The rest of the statement is an expression
+        # self.consume_token()
+        value = self.expression()
+
+        # Return a tuple representing the assignment statement
+        print(f'ASSIGNMENT: {variable_name} - {value}')
+
+    def input_statement(self):
+        # The current token should be 'GIMMEH'
+        self.match(GIMMEH)
+
+        # The next token should be an identifier
+        # self.consume_token()
+        variable_name = self.current_token()
+        self.match(IDENTIFIER)
+
+        # Return a tuple representing the input statement
+        print('INPUT - ', variable_name)
 
     def expression(self):
         # expression → Numbr | Identifier | String | Troof | Numbar
