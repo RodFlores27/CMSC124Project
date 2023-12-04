@@ -71,6 +71,8 @@ class LOLCodeParser:
             self.match(IDENTIFIER)
             if self.current_token().startswith(IS_NOW_A):
                 self.type_cast()
+            elif self.current_token().startswith(R):
+                self.assignment_statement()
             
 
     def variable_declaration(self):
@@ -92,19 +94,18 @@ class LOLCodeParser:
 
     def assignment_statement(self):
         # The current token should be an identifier
-        self.match('IDENTIFIER')
-        variable_name = self.current_token.value
+        # variable_name = self.current_token.value
 
         # The next token should be 'R'
         # self.consume_token()
-        self.match('R')
+        self.match(R)
 
         # The rest of the statement is an expression
         self.consume_token()
-        value = self.expression()
+        # value = self.expression()
 
         # Return a tuple representing the assignment statement
-        print(f'ASSIGNMENT: {variable_name} - {value}')
+        # print(f'ASSIGNMENT: {variable_name} - {value}')
 
     def input_statement(self):
         # The current token should be 'GIMMEH'

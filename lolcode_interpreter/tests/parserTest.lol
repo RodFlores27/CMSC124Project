@@ -3,5 +3,7 @@ HAI
         I HAS A temp ITZ 2
     BUHBYE
 
-    SMOOSH "test" AN "temp"
+    temp R 3
+    MAEK temp A YARN
+    temp IS NOW A NUMBR
 KTHXBYE
