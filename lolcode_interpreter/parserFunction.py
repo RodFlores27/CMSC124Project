@@ -59,6 +59,8 @@ class LOLCodeParser:
             self.print_statement()
         elif self.current_token().startswith('Input Operator'):
             self.input_statement()
+        elif self.current_token().startswith('String Concatenation Operator'):
+            self.str_concat()
         # elif self.current_token().startswith('Program End Delimiter'):
         #     self.match(KTHXBYE)
 
@@ -163,10 +165,35 @@ class LOLCodeParser:
     def arithmetic_operator(self):
         self.match(SUM_OF) or self.match(DIFF_OF)
 
-    def str_concat(self):
-        self.match(SMOOSH)
-        self.match(STRING) or self.str_concat()
-        self.match(AN)
-        self.match(STRING) or self.str_concat()
+    # def str_concat(self):
+    #     self.match(SMOOSH)
+    #     self.match(STRING) or self.str_concat()
+    #     self.match(AN)
+    #     self.match(STRING) or self.str_concat()
 
     
+    def str_concat(self):
+        # The current token should be 'SMOOSH'
+        self.match(SMOOSH)
+
+        # The next tokens should be strings or identifiers, separated by 'AN'
+        strings_to_concat = []
+        while True:
+            # self.consume_token()
+            if self.current_token().startswith('String') or self.current_token().startswith(IDENTIFIER):
+                strings_to_concat.append(self.current_token())
+                self.consume_token()
+                if self.current_token().startswith(AN):
+                    self.consume_token()
+                    continue
+                elif self.current_token().startswith(MKAY):
+                    self.consume_token()
+                    break
+                else:
+                    break
+            else:
+                print(f"Syntax Error: Expected string or identifier, but found {self.current_token()}")
+                break
+
+        # Return a tuple representing the string concatenation
+        print('STR_CONCAT - ', strings_to_concat)

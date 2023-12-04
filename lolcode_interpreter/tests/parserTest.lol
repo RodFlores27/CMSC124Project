@@ -3,5 +3,5 @@ HAI
         I HAS A temp ITZ 2
     BUHBYE
 
-    MAEK temp YARN
+    SMOOSH "test" AN "temp"
 KTHXBYE
