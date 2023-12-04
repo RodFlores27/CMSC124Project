@@ -62,6 +62,15 @@ class LOLCodeParser:
         # elif self.current_token().startswith('Program End Delimiter'):
         #     self.match(KTHXBYE)
 
+        # Type_Casting
+        elif self.current_token().startswith(MAEK):
+            self.type_cast()
+        elif self.current_token().startswith(IDENTIFIER):
+            self.match(IDENTIFIER)
+            if self.current_token().startswith(IS_NOW_A):
+                self.type_cast()
+            
+
     def variable_declaration(self):
         # i has a varident (itz (<varident | <expr> | <literal>))?
         self.match(I_HAS_A)
@@ -89,7 +98,7 @@ class LOLCodeParser:
         self.match('R')
 
         # The rest of the statement is an expression
-        # self.consume_token()
+        self.consume_token()
         value = self.expression()
 
         # Return a tuple representing the assignment statement
@@ -106,6 +115,20 @@ class LOLCodeParser:
 
         # Return a tuple representing the input statement
         print('INPUT - ', variable_name)
+
+    def type_cast(self):
+        # MAEK
+        if self.current_token().startswith(MAEK):
+            self.consume_token()
+            self.match(IDENTIFIER)
+            if self.current_token().startswith(A):
+                self.consume_token()
+            self.match(TYPE) # Literal
+
+        # No MAEK
+        elif self.current_token().startswith(IS_NOW_A):
+            self.match(IS_NOW_A)
+            self.match(TYPE)
 
     def expression(self):
         # expression → Numbr | Identifier | String | Troof | Numbar
@@ -146,9 +169,4 @@ class LOLCodeParser:
         self.match(AN)
         self.match(STRING) or self.str_concat()
 
-    def type_cast(self):
-        if self.match(MAEK):
-            self.consume_token()
-            self.match(IDENTIFIER)
-            self.match(A)
-            self.match(TYPE) # Literal
+    
