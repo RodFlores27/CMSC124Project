@@ -70,7 +70,7 @@ class LOLCodeLexer:
             (r'^\b(FOUND YR)\b', 'Return Statement Delimiter 1'),
             (r'^\b((I IZ))\b', 'Return Statement Delimiter 2'),
             (r'^\bMKAY\b', 'Function Call Delimiter'),
-            (r'\b\+\b', 'Print Concatenation Operator'),
+            (r'\+', 'Print Concatenation Operator'),
 
             # literals
             # Pattern for capturing integer literals
@@ -80,7 +80,7 @@ class LOLCodeLexer:
             (r'^\bWIN\b', 'Troof'),  # Pattern for capturing boolean literals
             (r'^\bFAIL\b', 'Troof'),  # Pattern for capturing boolean literals
             # Pattern for capturing string literals
-            (r'"([^"]*"*(?!""))*[^"]*"', 'String'),
+            (r'"([^"]*"*(?!""))*"', 'String'),
             # Pattern for capturing type literals
             (r'^\b(NUMBR|NUMBAR|TROOF|YARN)\b', 'Type'),
             # identifiers
@@ -104,7 +104,7 @@ class LOLCodeLexer:
                         token_value = match.group().strip()  # Remove leading and trailing whitespace
 
                         if in_multiline_comment:
-                            if token_type == TLDR:  # 'Multi Line Comment End Delimiter'
+                            if token_type == self.macros.TLDR:  # 'Multi Line Comment End Delimiter'
                                 in_multiline_comment = False
                             line = line[match.end():].lstrip()
                             break

@@ -21,14 +21,22 @@ class LOLCodeParser:
         # for token in self.tokens:
         #     print(token.get('token_type'), token.get('token_value'))
 
+        # Lists of values
+        self.arithmetic_operators = [self.macros.SUM_OF, self.macros.DIFF_OF, self.macros.PRODUKT_OF,
+                                     self.macros.QUOSHUNT_OF, self.macros.MOD_OF, self.macros.BIGGR_OF, self.macros.SMALLR_OF]
+        print(self.arithmetic_operators)
+        self.literals = [self.macros.NUMBR, self.macros.NUMBAR,
+                         self.macros.TROOF, self.macros.STRING]
+
     def parse(self):
         self.program()
 
     def match(self, expected_type):        # find the macroName of the expectedType
         macroNameOfExpectedType = [attr for attr in dir(
             self.macros) if getattr(self.macros, attr) == expected_type][0]
-        print(self.current_token().get('token_type'))
+
         if self.current_token().get('token_type') == expected_type:
+            print(self.current_token().get('token_type'))
             self.consume_token()
         else:
             print(
@@ -82,7 +90,7 @@ class LOLCodeParser:
 
     def statement(self):
         print("Statementing... Current token:", self.current_token())
-
+        # for printing
         if self.current_token().get('token_type') == 'Output Operator':
             self.print_statement()
         # elif self.current_token() == "GIMMEH":
@@ -91,7 +99,7 @@ class LOLCodeParser:
         #     self.str_concat()
         # elif self.current_token() == "MAEK":
         #     self.type_cast()
-        # statement starts with identifier
+        # for statement starts with identifier
         elif self.current_token().get('token_type') == "Identifier":
             self.currentIdentifier = self.current_token().get('token_value')
             self.match(self.macros.IDENTIFIER)
@@ -101,6 +109,11 @@ class LOLCodeParser:
                 self.assignment_statement()
         elif self.current_token().get('token_type') == 'Variable Declaration Start Delimiter':
             self.data_segment()
+        # for arithmetic operations
+        elif self.current_token().get('token_type') in self.arithmetic_operators:
+            self.arithmetic_expr()
+            print("success")
+
         else:
             raise ValueError(f"Error: Unrecognized statement found.")
 
@@ -178,16 +191,81 @@ class LOLCodeParser:
                 f"Unexpected token in expression: {self.current_token()}. Expecting literal, variable, or expression")
         return {'type': tokenType, 'value': tokenValue}
 
-    # def arithmetic_expr(self):
-    #     self.arithmetic_operator()
-    #     self.match(self.macros.NUMBR | self.macros.NUMBAR |
-    #                self.arithmetic_expr())
-    #     self.match(self.macros.AN)
-    #     self.match(self.macros.NUMBR | self.macros.NUMBAR |
-    #                self.arithmetic_expr())
+    def arithmetic_expr(self):
+        '''
+        Features (so far): arithmetic operations can be applied with 2 arity; infinite arity not yet implemented.
+        '''
 
-    # def arithmetic_operator(self):
-    #     self.match(self.macros.SUM_OF) or self.match(self.macros.DIFF_OF)
+        token_type = self.arithmetic_operator().get('type')
+        operand1 = None
+        operand2 = None
+
+        if token_type == 'Addition Operator':
+            # Add literals
+            if self.current_token().get('token_type') in [self.macros.NUMBAR, self.macros.NUMBR]:
+                operand1 = int(self.current_token().get('token_value'))
+                self.consume_token()
+            elif self.current_token().get('token_type') == 'Identifier':
+                tokenValue = self.variables[self.current_token().get(
+                    'token_value')].get('value')
+                operand1 = int(tokenValue)
+                self.match('Identifier')
+
+            else:
+                raise SyntaxError(
+                    f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
+
+            self.match(self.macros.AN)
+
+            if self.current_token().get('token_type') in [self.macros.NUMBAR, self.macros.NUMBR]:
+                operand2 = int(self.current_token().get('token_value'))
+                self.consume_token()
+            elif self.current_token().get('token_type') == 'Identifier':
+                tokenValue = self.variables[self.current_token().get(
+                    'token_value')].get('value')
+                operand2 = int(tokenValue)
+                self.match('Identifier')
+            else:
+                raise SyntaxError(
+                    f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
+
+            self.it = operand1 + operand2
+
+            # Add identifiers
+            # if self.current_token.get('token_type') == 'Identifier'
+
+        # elif token_type == 'Subtraction Operator':
+        #     # Perform action for subtraction operator
+        # elif token_type == 'Multiplication Operator':
+        #     # Perform action for multiplication operator
+        # elif token_type == 'Division Operator':
+        #     # Perform action for division operator
+        # elif token_type == 'Modulo Operator':
+        #     # Perform action for modulo operator
+        # elif token_type == 'Greater Than Operator':
+        #     # Perform action for greater than operator
+        # elif token_type == 'Less Than Operator':
+        #     # Perform action for less than operator
+        print("Implicit IT variable: ", self.it)
+
+    def arithmetic_operator(self):
+        tokenType = self.current_token().get('token_type')
+        if (tokenType == 'Addition Operator' or
+            tokenType == 'Subtraction Operator' or
+            tokenType == 'Multiplication Operator' or
+            tokenType == 'Division Operator' or
+            tokenType == 'Modulo Operator' or
+            tokenType == 'Greater Than Operator' or
+            tokenType == 'Less Than Operator'
+            ):
+
+            tokenType = self.current_token().get('token_type')
+            tokenValue = self.current_token().get('token_value')
+            self.match(tokenType)
+        else:
+            raise SyntaxError(
+                f"Unexpected token in expression: {self.current_token()}. Expecting arithmetic operator")
+        return {'type': tokenType, 'value': tokenValue}
 
     # def str_concat(self):
     #     self.match(self.macros.SMOOSH)

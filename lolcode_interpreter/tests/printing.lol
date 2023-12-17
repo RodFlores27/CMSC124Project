@@ -4,10 +4,11 @@ HAI
     BUHBYE
     
     BTW works
-    VISIBLE "hello"
+    VISIBLE "hel         lo"
 
-    BTW doesn't work
+    OBTW doesnt work
     VISIBLE "hello1" + "hello2" 
     VISIBLE thing1
     VISIBLE thing1 + "hello2"
+    TLDR
 KTHXBYE
