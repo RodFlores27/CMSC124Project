@@ -70,6 +70,7 @@ class LOLCodeLexer:
             (r'^\b(FOUND YR)\b', 'Return Statement Delimiter 1'),
             (r'^\b((I IZ))\b', 'Return Statement Delimiter 2'),
             (r'^\bMKAY\b', 'Function Call Delimiter'),
+            (r'\b\+\b', 'Print Concatenation Operator'),
 
             # literals
             # Pattern for capturing integer literals

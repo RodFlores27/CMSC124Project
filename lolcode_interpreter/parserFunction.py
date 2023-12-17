@@ -83,21 +83,23 @@ class LOLCodeParser:
     def statement(self):
         print("Statementing... Current token:", self.current_token())
 
-        # if self.current_token() == "VISIBLE":
-        #     self.print_statement()
+        if self.current_token().get('token_type') == 'Output Operator':
+            self.print_statement()
         # elif self.current_token() == "GIMMEH":
         #     self.input_statement()
         # elif self.current_token() == "SMOOSH":
         #     self.str_concat()
         # elif self.current_token() == "MAEK":
         #     self.type_cast()
-        # elif self.current_token() == "IDENTIFIER":
-        #     self.match(self.macros.IDENTIFIER)
-        #     if self.current_token() == "IS_NOW_A":
-        #         self.type_cast()
-        #     elif self.current_token() == "R":
-        #         self.assignment_statement()
-        if self.current_token().get('token_type') == 'Variable Declaration Start Delimiter':
+        # statement starts with identifier
+        elif self.current_token().get('token_type') == "Identifier":
+            self.currentIdentifier = self.current_token().get('token_value')
+            self.match(self.macros.IDENTIFIER)
+            # if self.current_token() == "IS_NOW_A":
+            #     self.type_cast()
+            if self.current_token().get('token_type') == "Assignment Operator":
+                self.assignment_statement()
+        elif self.current_token().get('token_type') == 'Variable Declaration Start Delimiter':
             self.data_segment()
         else:
             raise ValueError(f"Error: Unrecognized statement found.")
@@ -111,17 +113,25 @@ class LOLCodeParser:
         if self.current_token().get('token_type') == self.macros.ITZ:
             self.consume_token()
             # assign value of expression to identifier
-            self.variables[self.currentIdentifier] = self.expression(
-                self.currentIdentifier)
+            self.variables[self.currentIdentifier] = self.expression()
             print("Current variable values", self.variables)
 
-    # def print_statement(self):
-    #     self.match(self.macros.VISIBLE)
-    #     self.expression()
+    def print_statement(self):
+        # printing VISIBLE has infinite arity and concatenates all of its operands after casting them to YARNs. Each operand is  separated by a ‘+’ symbol.
+        # At the moment, it can only print with single arity
+        # TODO: allow printing with infinite arity
+        self.match(self.macros.VISIBLE)
+        operand = self.expression()
+        if operand:
+            print(operand.get('value'))
 
-    # def assignment_statement(self):
-    #     self.match(self.macros.R)
-    #     self.consume_token()
+    def assignment_statement(self):
+        # TODO: should be allowed to assign value of an existing variable to LHS variable
+
+        # R followed by an expression
+        self.match(self.macros.R)
+        self.variables[self.currentIdentifier] = self.expression()
+        print("Current variable values", self.variables)
 
     # def input_statement(self):
     #     self.match(self.macros.GIMMEH)
@@ -140,17 +150,29 @@ class LOLCodeParser:
     #         self.match(self.macros.IS_NOW_A)
     #         self.match(self.macros.TYPE)
 
-    def expression(self, identifier):
+    def expression(self):
+        '''
+        Features (so far): able to be used in: 
+                variable declaration and initialization, 
+                variable assignment and re-assignment
+        '''
+
         tokenType = None
         if (self.current_token().get('token_type') == 'Numbr' or
-            self.current_token().get('token_type') == 'Identifier' or
             self.current_token().get('token_type') == 'String' or
             self.current_token().get('token_type') == 'Troof' or
-            self.current_token().get('token_type') == 'Numbar' or
-                self.current_token().get('token_type') == 'Literal'):
+                self.current_token().get('token_type') == 'Numbar'):
+
             tokenType = self.current_token().get('token_type')
             tokenValue = self.current_token().get('token_value')
             self.match(tokenType)
+
+        elif (self.current_token().get('token_type') == 'Identifier'):
+            tokenType = self.variables[self.current_token().get(
+                'token_value')].get('type')
+            tokenValue = self.variables[self.current_token().get(
+                'token_value')].get('value')
+            self.match('Identifier')
         else:
             raise SyntaxError(
                 f"Unexpected token in expression: {self.current_token()}. Expecting literal, variable, or expression")
