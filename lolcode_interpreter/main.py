@@ -2,7 +2,7 @@
 from parserFunction import LOLCodeParser
 import sys
 import re
-from macros import *
+from macros import LOLMacros
 
 
 class LOLCodeLexer:
@@ -11,78 +11,80 @@ class LOLCodeLexer:
         self.tokens = []
         self.variable_names = set()
         self.string_literals = []
+        self.macros = LOLMacros()
 
     def tokenize(self):
         # Define regular expressions for LOLCODE tokens
         token_patterns = [
             # keywords
-            (r'^(HAI)', 'Program Start Delimiter'),
-            (r'^(KTHXBYE)', 'Program End Delimiter'),
-            (r'^(WAZZUP)', 'Variable Declaration Start Delimiter'),
-            (r'^(BUHBYE)', 'Variable Declaration End Delimiter'),
-            (r'^BTW', 'Single Line Comment Delimiter'),
-            (r'^(OBTW)', 'Multi Line Comment Start Delimiter'),
-            (r'^(TLDR)', 'Multi Line Comment End Delimiter'),
-            (r'^((I HAS A))', 'Variable Declaration'),
-            (r'^ITZ', 'Variable Assignment'),
-            (r'^R', 'Assignment Operator'),
-            (r'^(SUM OF)', 'Addition Operator'),
-            (r'^(DIFF OF)', 'Subtraction Operator'),
-            (r'^(PRODUKT OF)', 'Multiplication Operator'),
-            (r'^(QUOSHUNT OF)', 'Division Operator'),
-            (r'^(MOD OF)', 'Modulo Operator'),
-            (r'^(BIGGR OF)', 'Greater Than Operator'),
-            (r'^(SMALLR OF)', 'Less Than Operator'),
-            (r'^(BOTH OF)', 'Logical AND Operator'),
-            (r'^(EITHER OF)', 'Logical OR Operator'),
-            (r'^(WON OF)', 'Logical XOR Operator'),
-            (r'^(NOT)', 'Logical NOT Operator'),
-            (r'^((ANY OF))', 'Logical OR operator'),
-            (r'^((ALL OF))', 'Logical AND operator'),
-            (r'^(BOTH SAEM)', 'Equality Operator'),
-            (r'^(DIFFRINT)', 'Inequality Operator'),
-            (r'^(SMOOSH)', 'String Concatenation Operator'),
-            (r'^MAEK', 'Type Conversion Operator 1'),
-            (r'^(AN)', 'Arity'),
+            (r'^\b(HAI)\b', 'Program Start Delimiter'),
+            (r'^\b(KTHXBYE)\b', 'Program End Delimiter'),
+            (r'^\b(WAZZUP)\b', 'Variable Declaration Start Delimiter'),
+            (r'^\b(BUHBYE)\b', 'Variable Declaration End Delimiter'),
+            (r'^\bBTW\b', 'Single Line Comment Delimiter'),
+            (r'^\b(OBTW)\b', 'Multi Line Comment Start Delimiter'),
+            (r'^\b(TLDR)\b', 'Multi Line Comment End Delimiter'),
+            (r'^\b((I HAS A))\b', 'Variable Declaration'),
+            (r'^\bITZ\b', 'Variable Assignment'),
+            (r'^\bR\b', 'Assignment Operator'),
+            (r'^\b(SUM OF)\b', 'Addition Operator'),
+            (r'^\b(DIFF OF)\b', 'Subtraction Operator'),
+            (r'^\b(PRODUKT OF)\b', 'Multiplication Operator'),
+            (r'^\b(QUOSHUNT OF)\b', 'Division Operator'),
+            (r'^\b(MOD OF)\b', 'Modulo Operator'),
+            (r'^\b(BIGGR OF)\b', 'Greater Than Operator'),
+            (r'^\b(SMALLR OF)\b', 'Less Than Operator'),
+            (r'^\b(BOTH OF)\b', 'Logical AND Operator'),
+            (r'^\b(EITHER OF)\b', 'Logical OR Operator'),
+            (r'^\b(WON OF)\b', 'Logical XOR Operator'),
+            (r'^\b(NOT)\b', 'Logical NOT Operator'),
+            (r'^\b((ANY OF))\b', 'Logical OR operator'),
+            (r'^\b((ALL OF))\b', 'Logical AND operator'),
+            (r'^\b(BOTH SAEM)\b', 'Equality Operator'),
+            (r'^\b(DIFFRINT)\b', 'Inequality Operator'),
+            (r'^\b(SMOOSH)\b', 'String Concatenation Operator'),
+            (r'^\bMAEK\b', 'Type Conversion Operator 1'),
+            (r'^\b(AN)\b', 'Arity'),
             (r'^\b(A)\b', 'Type Conversion Operator 2'),
-            (r'^(IS NOW A)', 'Type Conversion Operator 3'),
-            (r'^(VISIBLE)', 'Output Operator'),
-            (r'^(GIMMEH)', 'Input Operator'),
-            (r'^(O RLY\?)', 'If-Then Statement Start Delimiter'),
-            (r'^(YA RLY)', 'If Statement Delimiter'),
-            (r'^(MEBBE)', 'Else If Statement Delimiter'),
-            (r'^(NO WAI)', 'Else Statement Delimiter'),
-            (r'^(OIC)', 'If-Then Statement End Delimiter'),
-            (r'^(WTF\?)', 'Switch Statement Start Delimiter'),
-            (r'^(OMG)\b', 'Case Statement Start Delimiter'),
-            (r'^(OMGWTF)\b', 'Default Case Statement Start Delimiter'),
-            (r'^((IM IN YR))', 'Loop Statement Start Delimiter'),
-            (r'^UPPIN', 'Increment Operator'),
-            (r'^NERFIN', 'Decrement Operator'),
-            (r'^(YR)', 'Loop Variable Declaration'),
-            (r'^TIL', 'Loop Condition Delimiter 1'),
-            (r'^WILE', 'Loop Condition Delimiter 2'),
-            (r'^(IM OUTTA YR)', 'Loop Statement End Delimiter'),
-            (r'^((HOW IZ I))', 'Function Declaration Start Delimiter'),
-            (r'^((IF U SAY SO))', 'Function Declaration End Delimiter'),
-            (r'^(GTFO)', 'Break Statement'),
-            (r'^(FOUND YR)', 'Return Statement Delimiter 1'),
-            (r'^((I IZ))', 'Return Statement Delimiter 2'),
-            (r'^MKAY', 'Function Call Delimiter'),
+            (r'^\b(IS NOW A)\b', 'Type Conversion Operator 3'),
+            (r'^\b(VISIBLE)\b', 'Output Operator'),
+            (r'^\b(GIMMEH)\b', 'Input Operator'),
+            (r'^\b(O RLY\?)\b', 'If-Then Statement Start Delimiter'),
+            (r'^\b(YA RLY)\b', 'If Statement Delimiter'),
+            (r'^\b(MEBBE)\b', 'Else If Statement Delimiter'),
+            (r'^\b(NO WAI)\b', 'Else Statement Delimiter'),
+            (r'^\b(OIC)\b', 'If-Then Statement End Delimiter'),
+            (r'^\b(WTF\?)\b', 'Switch Statement Start Delimiter'),
+            (r'^\b(OMG)\b', 'Case Statement Start Delimiter'),
+            (r'^\b(OMGWTF)\b', 'Default Case Statement Start Delimiter'),
+            (r'^\b((IM IN YR))\b', 'Loop Statement Start Delimiter'),
+            (r'^\bUPPIN\b', 'Increment Operator'),
+            (r'^\bNERFIN\b', 'Decrement Operator'),
+            (r'^\b(YR)\b', 'Loop Variable Declaration'),
+            (r'^\bTIL\b', 'Loop Condition Delimiter 1'),
+            (r'^\bWILE\b', 'Loop Condition Delimiter 2'),
+            (r'^\b(IM OUTTA YR)\b', 'Loop Statement End Delimiter'),
+            (r'^\b((HOW IZ I))\b', 'Function Declaration Start Delimiter'),
+            (r'^\b((IF U SAY SO))\b', 'Function Declaration End Delimiter'),
+            (r'^\b(GTFO)\b', 'Break Statement'),
+            (r'^\b(FOUND YR)\b', 'Return Statement Delimiter 1'),
+            (r'^\b((I IZ))\b', 'Return Statement Delimiter 2'),
+            (r'^\bMKAY\b', 'Function Call Delimiter'),
 
             # literals
-            (r'^-?[0-9]+', 'Numbr'),  # Pattern for capturing integer literals
+            # Pattern for capturing integer literals
+            (r'^\b-?[0-9]+\b', 'Numbr'),
             # Pattern for capturing floating point literals
-            (r'^-?[0-9]+\.[0-9]+', 'Numbar'),
-            (r'^WIN', 'Troof'),  # Pattern for capturing boolean literals
-            (r'^FAIL', 'Troof'),  # Pattern for capturing boolean literals
+            (r'^\b-?[0-9]+\.[0-9]+\b', 'Numbar'),
+            (r'^\bWIN\b', 'Troof'),  # Pattern for capturing boolean literals
+            (r'^\bFAIL\b', 'Troof'),  # Pattern for capturing boolean literals
             # Pattern for capturing string literals
             (r'"([^"]*"*(?!""))*[^"]*"', 'String'),
             # Pattern for capturing type literals
-            (r'^(NUMBR|NUMBAR|TROOF|YARN)', 'Type'),
+            (r'^\b(NUMBR|NUMBAR|TROOF|YARN)\b', 'Type'),
             # identifiers
             # Pattern for capturing variable identifiers
-            (r'^[a-zA-Z][a-zA-Z0-9_]*', 'Identifier'),
+            (r'^\b[a-zA-Z][a-zA-Z0-9_]*\b', 'Identifier'),
         ]
 
         # Split the source code into lines
@@ -110,8 +112,9 @@ class LOLCodeLexer:
                             # Remove the start and end quotes
                             token_value = token_value[1:-1]
 
-                        if token_type not in {BTW, OBTW}:
-                            self.tokens.append(f"{token_type} - {token_value}")
+                        if token_type not in {self.macros.BTW, self.macros.OBTW}:
+                            self.tokens.append(
+                                {'token_type': token_type, 'token_value': token_value})
 
                         if token_type == 'Identifier':
                             variable_name = match.group().strip()  # Remove leading and trailing whitespace
@@ -119,10 +122,10 @@ class LOLCodeLexer:
                         elif token_type == 'String':
                             string_literal = token_value
                             self.string_literals.append(string_literal)
-                        elif token_type == BTW:  # 'Single Line Comment Delimiter'
+                        elif token_type == self.macros.BTW:  # 'Single Line Comment Delimiter'
                             line = ''  # Remove the rest of the line
                             break
-                        elif token_type == OBTW:  # 'Multi Line Comment Start Delimiter'
+                        elif token_type == self.macros.OBTW:  # 'Multi Line Comment Start Delimiter'
                             in_multiline_comment = True
 
                         # Remove the matched token from the line
@@ -143,7 +146,7 @@ class LOLCodeLexer:
         return self.string_literals
 
     def __str__(self):
-        return f"LOLCodeLexer(\ntokens={self.tokens}, \nvariable_names={self.variable_names}, \nstring_literals={self.string_literals}\n)"
+        return f"LOLCodeLexer(\ntokens={self.tokens}, \nvariable_names={self.variable_names}, \nstring_literals={self.string_literals})"
 
 # Example usage
 

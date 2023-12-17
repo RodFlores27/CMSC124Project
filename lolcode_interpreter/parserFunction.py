@@ -1,5 +1,5 @@
 import re
-from macros import *
+from macros import LOLMacros
 
 
 class LOLCodeParser:
@@ -7,194 +7,184 @@ class LOLCodeParser:
         self.lexer = lexer
         self.tokens = lexer.get_tokens()
         self.current_token_index = 0
+        self.errored = False
+        self.macros = LOLMacros()
+
+        self.it = None  # Implicit 'it' variable. See variables section on specifications and expression statements
+
+        self.currentIdentifier = None
+
+        self.variables = {
+            variableName: {'type': 'NOOB', 'value': None} for variableName in lexer.get_variable_names()}
+
+        print(self.variables)
+        # for token in self.tokens:
+        #     print(token.get('token_type'), token.get('token_value'))
 
     def parse(self):
-        # Start parsing from the top-level program
         self.program()
 
-    def match(self, expected_type):
-        # Check if the current token matches the expected type
-        print(self.current_token())
-        if self.current_token().startswith(expected_type):
-            # Consume the token
+    def match(self, expected_type):        # find the macroName of the expectedType
+        macroNameOfExpectedType = [attr for attr in dir(
+            self.macros) if getattr(self.macros, attr) == expected_type][0]
+        print(self.current_token().get('token_type'))
+        if self.current_token().get('token_type') == expected_type:
             self.consume_token()
         else:
             print(
-                f"Syntax Error: Expected {expected_type}, but found {self.current_token()}")
+                f"Syntax Error: Expected {expected_type}: {macroNameOfExpectedType}, but instead found {self.current_token()}")
+            self.errored = True
 
     def current_token(self):
-        # Get the current token
         return self.tokens[self.current_token_index]
 
     def consume_token(self):
-        # Move to the next token
         self.current_token_index += 1
 
-    # Grammar rules
-
     def program(self):
-        # Program → 'HAI' statement_list 'KTHXBYE'
-        self.match(HAI)
-        self.data_segment()
-        self.statement_list()
-        self.match(KTHXBYE)
-        print("Program ended cleanly.")
+        # should be able to implement: functions, comments  before HAI
+
+        self.match(self.macros.HAI)
+        # Loop over all tokens until KTHXBYE is found
+
+        while not self.current_token().get('token_type') == 'Program End Delimiter':
+            self.statement()  # Parse the next statement
+
+        self.match(self.macros.KTHXBYE)
+
+        # should be able to implement: functions, comments  before HAI
+        if not self.errored:
+            print("\nProgram ended cleanly.")
+        else:
+            print("\nProgram has syntax error.")
 
     def data_segment(self):
-        self.match(WAZZUP)
-        self.variable_declaration() 
-        self.match(BUHBYE)
+        '''
+        Features (so far): can declare/initialize multiple variables; can reinitialize existing variable value; uninitialized variables have data_type of NOOB
+        '''
 
-    def statement_list(self):
-        while self.current_token_index < len(self.tokens):
-            if self.current_token().startswith(KTHXBYE) or self.current_token().startswith(BUHBYE):
-                break
-            self.statement()
+        self.match(self.macros.WAZZUP)
+        # Optional declaration or initialization of variables
+        if self.current_token().get('token_type') == self.macros.I_HAS_A:
+            # To deal with multiple declarations
+            while self.tokens[self.current_token_index+1].get('token_type') != self.macros.BUHBYE and self.current_token().get('token_type') == self.macros.I_HAS_A:
+                self.variable_declaration()
+        self.match(self.macros.BUHBYE)
+
+    # def statement_list(self):
+    # '''
+    # Puwede na siguro ito tanggalin, nalagay ko siya sa while loops ng data_segment at program()
+    # '''
+    #     while self.current_token_index < len(self.tokens):
+    #         if self.current_token().startswith(KTHXBYE) or self.current_token().startswith(BUHBYE):
+    #             break
+    #         self.statement()
 
     def statement(self):
-        # statement → variable_declaration | print_statement
-        if self.current_token().startswith('Variable Declaration'):
-            self.variable_declaration()
-        elif self.current_token().startswith('Output Operator'):
-            self.print_statement()
-        elif self.current_token().startswith('Input Operator'):
-            self.input_statement()
-        elif self.current_token().startswith('String Concatenation Operator'):
-            self.str_concat()
-        # elif self.current_token().startswith('Program End Delimiter'):
-        #     self.match(KTHXBYE)
+        print("Statementing... Current token:", self.current_token())
 
-        # Type_Casting
-        elif self.current_token().startswith(MAEK):
-            self.type_cast()
-        elif self.current_token().startswith(IDENTIFIER):
-            self.match(IDENTIFIER)
-            if self.current_token().startswith(IS_NOW_A):
-                self.type_cast()
-            elif self.current_token().startswith(R):
-                self.assignment_statement()
-            
+        # if self.current_token() == "VISIBLE":
+        #     self.print_statement()
+        # elif self.current_token() == "GIMMEH":
+        #     self.input_statement()
+        # elif self.current_token() == "SMOOSH":
+        #     self.str_concat()
+        # elif self.current_token() == "MAEK":
+        #     self.type_cast()
+        # elif self.current_token() == "IDENTIFIER":
+        #     self.match(self.macros.IDENTIFIER)
+        #     if self.current_token() == "IS_NOW_A":
+        #         self.type_cast()
+        #     elif self.current_token() == "R":
+        #         self.assignment_statement()
+        if self.current_token().get('token_type') == 'Variable Declaration Start Delimiter':
+            self.data_segment()
+        else:
+            raise ValueError(f"Error: Unrecognized statement found.")
 
     def variable_declaration(self):
-        # i has a varident (itz (<varident | <expr> | <literal>))?
-        self.match(I_HAS_A)
-        self.match(IDENTIFIER) # Ended here
-        if self.current_token().startswith(ITZ):
+        self.match(self.macros.I_HAS_A)
+        if self.current_token().get('token_type') == self.macros.IDENTIFIER:
+            self.currentIdentifier = self.current_token().get('token_value')
+        self.match(self.macros.IDENTIFIER)
+        # the optional ITZ
+        if self.current_token().get('token_type') == self.macros.ITZ:
             self.consume_token()
-            self.expression()
-        
-    # def lolInput(self):
-    #     self.match(GIMMEH)
-    #     self.match(IDENTIFIER)
+            # assign value of expression to identifier
+            self.variables[self.currentIdentifier] = self.expression(
+                self.currentIdentifier)
+            print("Current variable values", self.variables)
 
-    def print_statement(self):
-        # print_statement → 'VISIBLE' expression 'BUHBYE'
-        self.match(VISIBLE)
-        self.expression()
+    # def print_statement(self):
+    #     self.match(self.macros.VISIBLE)
+    #     self.expression()
 
-    def assignment_statement(self):
-        # The current token should be an identifier
-        # variable_name = self.current_token.value
+    # def assignment_statement(self):
+    #     self.match(self.macros.R)
+    #     self.consume_token()
 
-        # The next token should be 'R'
-        # self.consume_token()
-        self.match(R)
+    # def input_statement(self):
+    #     self.match(self.macros.GIMMEH)
+    #     variable_name = self.current_token()
+    #     self.match(self.macros.IDENTIFIER)
+    #     print('INPUT - ', variable_name)
 
-        # The rest of the statement is an expression
-        self.consume_token()
-        # value = self.expression()
+    # def type_cast(self):
+    #     if self.current_token().startswith(self.macros.MAEK):
+    #         self.consume_token()
+    #         self.match(self.macros.IDENTIFIER)
+    #         if self.current_token().startswith(self.macros.A):
+    #             self.consume_token()
+    #         self.match(self.macros.TYPE)
+    #     elif self.current_token().startswith(self.macros.IS_NOW_A):
+    #         self.match(self.macros.IS_NOW_A)
+    #         self.match(self.macros.TYPE)
 
-        # Return a tuple representing the assignment statement
-        # print(f'ASSIGNMENT: {variable_name} - {value}')
-
-    def input_statement(self):
-        # The current token should be 'GIMMEH'
-        self.match(GIMMEH)
-
-        # The next token should be an identifier
-        # self.consume_token()
-        variable_name = self.current_token()
-        self.match(IDENTIFIER)
-
-        # Return a tuple representing the input statement
-        print('INPUT - ', variable_name)
-
-    def type_cast(self):
-        # MAEK
-        if self.current_token().startswith(MAEK):
-            self.consume_token()
-            self.match(IDENTIFIER)
-            if self.current_token().startswith(A):
-                self.consume_token()
-            self.match(TYPE) # Literal
-
-        # No MAEK
-        elif self.current_token().startswith(IS_NOW_A):
-            self.match(IS_NOW_A)
-            self.match(TYPE)
-
-    def expression(self):
-        # expression → Numbr | Identifier | String | Troof | Numbar
-        if self.current_token().startswith('Numbr'):
-            self.match('Numbr')
-        elif self.current_token().startswith('Identifier'):
-            self.match('Identifier')
-        elif self.current_token().startswith('String'):
-            self.match('String')
-        elif self.current_token().startswith('Troof'):
-            self.match('Troof')
-        elif self.current_token().startswith('Numbar'):
-            self.match('Numbar')
-        elif self.current_token().startswith('Literal'):
-            self.match('Literal')
+    def expression(self, identifier):
+        tokenType = None
+        if (self.current_token().get('token_type') == 'Numbr' or
+            self.current_token().get('token_type') == 'Identifier' or
+            self.current_token().get('token_type') == 'String' or
+            self.current_token().get('token_type') == 'Troof' or
+            self.current_token().get('token_type') == 'Numbar' or
+                self.current_token().get('token_type') == 'Literal'):
+            tokenType = self.current_token().get('token_type')
+            tokenValue = self.current_token().get('token_value')
+            self.match(tokenType)
         else:
             raise SyntaxError(
-                f"Unexpected token in expression: {self.current_token()}")
-        
-    
-    ################################################################
-    # The following methods are not used in the current version.   #
-    # They are included here for completeness.                     #
-    ################################################################
+                f"Unexpected token in expression: {self.current_token()}. Expecting literal, variable, or expression")
+        return {'type': tokenType, 'value': tokenValue}
+        # TODO: finish return
 
-    def arithmetic_expr(self):
-        self.arithmetic_operator()
-        self.match(NUMBR|NUMBAR|self.arithmetic_expr())
-        self.match(AN)
-        self.match(NUMBR|NUMBAR|self.arithmetic_expr())
+    # def arithmetic_expr(self):
+    #     self.arithmetic_operator()
+    #     self.match(self.macros.NUMBR | self.macros.NUMBAR |
+    #                self.arithmetic_expr())
+    #     self.match(self.macros.AN)
+    #     self.match(self.macros.NUMBR | self.macros.NUMBAR |
+    #                self.arithmetic_expr())
 
-    def arithmetic_operator(self):
-        self.match(SUM_OF) or self.match(DIFF_OF)
+    # def arithmetic_operator(self):
+    #     self.match(self.macros.SUM_OF) or self.match(self.macros.DIFF_OF)
 
     # def str_concat(self):
-    #     self.match(SMOOSH)
-    #     self.match(STRING) or self.str_concat()
-    #     self.match(AN)
-    #     self.match(STRING) or self.str_concat()
-
-    
-    def str_concat(self):
-        # The current token should be 'SMOOSH'
-        self.match(SMOOSH)
-
-        # The next tokens should be strings or identifiers, separated by 'AN'
-        strings_to_concat = []
-        while True:
-            # self.consume_token()
-            if self.current_token().startswith('String') or self.current_token().startswith(IDENTIFIER):
-                strings_to_concat.append(self.current_token())
-                self.consume_token()
-                if self.current_token().startswith(AN):
-                    self.consume_token()
-                    continue
-                elif self.current_token().startswith(MKAY):
-                    self.consume_token()
-                    break
-                else:
-                    break
-            else:
-                print(f"Syntax Error: Expected string or identifier, but found {self.current_token()}")
-                break
-
-        # Return a tuple representing the string concatenation
-        print('STR_CONCAT - ', strings_to_concat)
+    #     self.match(self.macros.SMOOSH)
+    #     strings_to_concat = []
+    #     while True:
+    #         if self.current_token().startswith('String') or self.current_token().startswith(self.macros.IDENTIFIER):
+    #             strings_to_concat.append(self.current_token())
+    #             self.consume_token()
+    #             if self.current_token().startswith(self.macros.AN):
+    #                 self.consume_token()
+    #                 continue
+    #             elif self.current_token().startswith(self.macros.MKAY):
+    #                 self.consume_token()
+    #                 break
+    #             else:
+    #                 break
+    #         else:
+    #             print(
+    #                 f"Syntax Error: Expected string or identifier, but instead found {self.current_token()}")
+    #             break
+    #     print('STR_CONCAT - ', strings_to_concat)
