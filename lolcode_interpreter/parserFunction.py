@@ -155,7 +155,6 @@ class LOLCodeParser:
             raise SyntaxError(
                 f"Unexpected token in expression: {self.current_token()}. Expecting literal, variable, or expression")
         return {'type': tokenType, 'value': tokenValue}
-        # TODO: finish return
 
     # def arithmetic_expr(self):
     #     self.arithmetic_operator()
