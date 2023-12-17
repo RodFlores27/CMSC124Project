@@ -200,52 +200,57 @@ class LOLCodeParser:
         operand1 = None
         operand2 = None
 
-        if token_type == 'Addition Operator':
-            # Add literals
-            if self.current_token().get('token_type') in [self.macros.NUMBAR, self.macros.NUMBR]:
-                operand1 = int(self.current_token().get('token_value'))
-                self.consume_token()
-            elif self.current_token().get('token_type') == 'Identifier':
-                tokenValue = self.variables[self.current_token().get(
-                    'token_value')].get('value')
-                operand1 = int(tokenValue)
-                self.match('Identifier')
+        # Fetch the first operand
+        if self.current_token().get('token_type') in [self.macros.NUMBAR, self.macros.NUMBR]:
+            operand1 = int(self.current_token().get('token_value'))
+            self.consume_token()
+        elif self.current_token().get('token_type') == 'Identifier':
+            tokenValue = self.variables[self.current_token().get('token_value')].get('value')
+            operand1 = int(tokenValue)
+            self.match('Identifier')
+        else:
+            raise SyntaxError(f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
 
-            else:
-                raise SyntaxError(
-                    f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
+        self.match(self.macros.AN)
 
-            self.match(self.macros.AN)
-
-            if self.current_token().get('token_type') in [self.macros.NUMBAR, self.macros.NUMBR]:
-                operand2 = int(self.current_token().get('token_value'))
-                self.consume_token()
-            elif self.current_token().get('token_type') == 'Identifier':
-                tokenValue = self.variables[self.current_token().get(
-                    'token_value')].get('value')
-                operand2 = int(tokenValue)
-                self.match('Identifier')
-            else:
-                raise SyntaxError(
-                    f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
-
-            self.it = operand1 + operand2
+        # Fetch the second operand
+        if self.current_token().get('token_type') in [self.macros.NUMBAR, self.macros.NUMBR]:
+            operand2 = int(self.current_token().get('token_value'))
+            self.consume_token()
+        elif self.current_token().get('token_type') == 'Identifier':
+            tokenValue = self.variables[self.current_token().get('token_value')].get('value')
+            operand2 = int(tokenValue)
+            self.match('Identifier')
+        else:
+            raise SyntaxError(f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
 
             # Add identifiers
             # if self.current_token.get('token_type') == 'Identifier'
 
-        # elif token_type == 'Subtraction Operator':
-        #     # Perform action for subtraction operator
-        # elif token_type == 'Multiplication Operator':
-        #     # Perform action for multiplication operator
-        # elif token_type == 'Division Operator':
-        #     # Perform action for division operator
-        # elif token_type == 'Modulo Operator':
-        #     # Perform action for modulo operator
-        # elif token_type == 'Greater Than Operator':
-        #     # Perform action for greater than operator
-        # elif token_type == 'Less Than Operator':
-        #     # Perform action for less than operator
+        if token_type == 'Addition Operator':
+            # Perform action for addition operator
+            self.it = operand1 + operand2
+        elif token_type == 'Subtraction Operator':
+            # Perform action for subtraction operator
+            self.it = operand1 - operand2
+        elif token_type == 'Multiplication Operator':
+            # Perform action for multiplication operator
+            self.it = operand1 * operand2
+        elif token_type == 'Division Operator':
+            # Perform action for division operator
+            if operand2 != 0:
+                self.it = operand1 / operand2
+            else:
+                raise ZeroDivisionError("Division by zero")
+        elif token_type == 'Modulo Operator':
+            # Perform action for modulo operator
+            self.it = operand1 % operand2
+        elif token_type == 'Greater Than Operator':
+            # Perform action for greater than operator
+            self.it = operand1 > operand2
+        elif token_type == 'Less Than Operator':
+            # Perform action for less than operator
+            self.it = operand1 < operand2
         print("Implicit IT variable: ", self.it)
 
     def arithmetic_operator(self):
