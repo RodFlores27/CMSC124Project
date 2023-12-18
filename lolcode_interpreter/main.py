@@ -73,10 +73,10 @@ class LOLCodeLexer:
             (r'\+', 'Print Concatenation Operator'),
 
             # literals
-            # Pattern for capturing integer literals
-            (r'^\b-?[0-9]+\b', 'Numbr'),
             # Pattern for capturing floating point literals
             (r'^\b-?[0-9]+\.[0-9]+\b', 'Numbar'),
+            # Pattern for capturing integer literals
+            (r'^\b-?[0-9]+\b', 'Numbr'),
             (r'^\bWIN\b', 'Troof'),  # Pattern for capturing boolean literals
             (r'^\bFAIL\b', 'Troof'),  # Pattern for capturing boolean literals
             # Pattern for capturing string literals

@@ -26,18 +26,23 @@ class LOLCodeParser:
                                      self.macros.QUOSHUNT_OF, self.macros.MOD_OF, self.macros.BIGGR_OF, self.macros.SMALLR_OF]
         print(self.arithmetic_operators)
         self.literals = [self.macros.NUMBR, self.macros.NUMBAR,
-                         self.macros.TROOF, self.macros.STRING]
+                         self.macros.TROOF, 'YARN']
 
     def parse(self):
         self.program()
 
     def match(self, expected_type):        # find the macroName of the expectedType
-        macroNameOfExpectedType = [attr for attr in dir(
-            self.macros) if getattr(self.macros, attr) == expected_type][0]
-
         if self.current_token().get('token_type') == expected_type:
+            macroNameOfExpectedType = [attr for attr in dir(
+                self.macros) if getattr(self.macros, attr) == expected_type][0]
             print(self.current_token().get('token_type'))
             self.consume_token()
+        elif type(expected_type) == list:
+            macroNameOfExpectedType = [attr for attr in dir(
+                self.macros) if getattr(self.macros, attr) == expected_type]
+            if self.current_token().get('token_value') in expected_type:
+                print(self.current_token().get('token_value'))
+                self.consume_token()
         else:
             print(
                 f"Syntax Error: Expected {expected_type}: {macroNameOfExpectedType}, but instead found {self.current_token()}")
@@ -88,22 +93,25 @@ class LOLCodeParser:
     #             break
     #         self.statement()
 
+    # maek varident a? <literal> | varident is now a <literal>
+    # TODO: maek; varident is now a
+
     def statement(self):
         print("Statementing... Current token:", self.current_token())
         # for printing
         if self.current_token().get('token_type') == 'Output Operator':
             self.print_statement()
-        # elif self.current_token() == "GIMMEH":
-        #     self.input_statement()
+        elif self.current_token().get('token_type') == "Input Operator":
+            self.input_statement()
         # elif self.current_token() == "SMOOSH":
         #     self.str_concat()
-        # elif self.current_token() == "MAEK":
-        #     self.type_cast()
+        elif self.current_token().get('token_type') == 'Type Conversion Operator 1':  # MAEK
+            self.type_cast()
         # for statement starts with identifier
         elif self.current_token().get('token_type') == "Identifier":
             self.currentIdentifier = self.current_token().get('token_value')
             self.match(self.macros.IDENTIFIER)
-            # if self.current_token() == "IS_NOW_A":
+            # if self.current_token() == 'Type Conversion Operator 3':
             #     self.type_cast()
             if self.current_token().get('token_type') == "Assignment Operator":
                 self.assignment_statement()
@@ -138,6 +146,13 @@ class LOLCodeParser:
         if operand:
             print(operand.get('value'))
 
+    def input_statement(self):
+        self.match(self.macros.GIMMEH)
+        variable_name = self.current_token().get('token_value')
+        self.match(self.macros.IDENTIFIER)
+        self.variables[variable_name] = {'type': 'String', 'value': input()}
+        print("Current variable values", self.variables)
+
     def assignment_statement(self):
         # TODO: should be allowed to assign value of an existing variable to LHS variable
 
@@ -146,22 +161,30 @@ class LOLCodeParser:
         self.variables[self.currentIdentifier] = self.expression()
         print("Current variable values", self.variables)
 
-    # def input_statement(self):
-    #     self.match(self.macros.GIMMEH)
-    #     variable_name = self.current_token()
-    #     self.match(self.macros.IDENTIFIER)
-    #     print('INPUT - ', variable_name)
+    def type_cast(self):
+        '''
+        Features (so far): can type_cast values into a string
+        '''
 
-    # def type_cast(self):
-    #     if self.current_token().startswith(self.macros.MAEK):
-    #         self.consume_token()
-    #         self.match(self.macros.IDENTIFIER)
-    #         if self.current_token().startswith(self.macros.A):
-    #             self.consume_token()
-    #         self.match(self.macros.TYPE)
-    #     elif self.current_token().startswith(self.macros.IS_NOW_A):
-    #         self.match(self.macros.IS_NOW_A)
-    #         self.match(self.macros.TYPE)
+        # MAEK
+        if self.current_token().get('token_type') == self.macros.MAEK:
+            self.match(self.macros.MAEK)
+            self.currentIdentifier = self.current_token().get('token_value')
+            self.match(self.macros.IDENTIFIER)
+            if self.current_token().get('token_type') == self.macros.A:
+                self.match(self.macros.A)
+            type_to_cast = self.current_token().get('token_value')
+            self.match(self.literals)
+            if type_to_cast == 'YARN':
+                self.variables[self.currentIdentifier]['type'] = 'String'
+            # TODO apply type_casting of other types
+
+            print("Current variable values", self.variables)
+        # TODO apply other way of type_casting
+        # varident IS_NOW_A
+        # elif self.current_token().get('token_type') == self.macros.IS_NOW_A:
+        #     self.match(self.macros.IS_NOW_A)
+        #     self.match(self.literals)
 
     def expression(self):
         '''
@@ -205,11 +228,13 @@ class LOLCodeParser:
             operand1 = int(self.current_token().get('token_value'))
             self.consume_token()
         elif self.current_token().get('token_type') == 'Identifier':
-            tokenValue = self.variables[self.current_token().get('token_value')].get('value')
+            tokenValue = self.variables[self.current_token().get(
+                'token_value')].get('value')
             operand1 = int(tokenValue)
             self.match('Identifier')
         else:
-            raise SyntaxError(f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
+            raise SyntaxError(
+                f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
 
         self.match(self.macros.AN)
 
@@ -218,14 +243,13 @@ class LOLCodeParser:
             operand2 = int(self.current_token().get('token_value'))
             self.consume_token()
         elif self.current_token().get('token_type') == 'Identifier':
-            tokenValue = self.variables[self.current_token().get('token_value')].get('value')
+            tokenValue = self.variables[self.current_token().get(
+                'token_value')].get('value')
             operand2 = int(tokenValue)
             self.match('Identifier')
         else:
-            raise SyntaxError(f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
-
-            # Add identifiers
-            # if self.current_token.get('token_type') == 'Identifier'
+            raise SyntaxError(
+                f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
 
         if token_type == 'Addition Operator':
             # Perform action for addition operator
@@ -256,12 +280,12 @@ class LOLCodeParser:
     def arithmetic_operator(self):
         tokenType = self.current_token().get('token_type')
         if (tokenType == 'Addition Operator' or
-            tokenType == 'Subtraction Operator' or
-            tokenType == 'Multiplication Operator' or
-            tokenType == 'Division Operator' or
-            tokenType == 'Modulo Operator' or
-            tokenType == 'Greater Than Operator' or
-            tokenType == 'Less Than Operator'
+                tokenType == 'Subtraction Operator' or
+                tokenType == 'Multiplication Operator' or
+                tokenType == 'Division Operator' or
+                tokenType == 'Modulo Operator' or
+                tokenType == 'Greater Than Operator' or
+                tokenType == 'Less Than Operator'
             ):
 
             tokenType = self.current_token().get('token_type')
