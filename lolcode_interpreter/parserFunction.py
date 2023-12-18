@@ -84,14 +84,6 @@ class LOLCodeParser:
                 self.variable_declaration()
         self.match(self.macros.BUHBYE)
 
-    # def statement_list(self):
-    # '''
-    # Puwede na siguro ito tanggalin, nalagay ko siya sa while loops ng data_segment at program()
-    # '''
-    #     while self.current_token_index < len(self.tokens):
-    #         if self.current_token().startswith(KTHXBYE) or self.current_token().startswith(BUHBYE):
-    #             break
-    #         self.statement()
 
     # maek varident a? <literal> | varident is now a <literal>
     # TODO: maek; varident is now a
@@ -135,7 +127,7 @@ class LOLCodeParser:
             self.consume_token()
             # assign value of expression to identifier
             self.variables[self.currentIdentifier] = self.expression()
-            print("Current variable values", self.variables)
+        print("Current variable values", self.variables)
 
     def print_statement(self):
         # printing VISIBLE has infinite arity and concatenates all of its operands after casting them to YARNs. Each operand is  separated by a ‘+’ symbol.
@@ -163,7 +155,7 @@ class LOLCodeParser:
 
     def type_cast(self):
         '''
-        Features (so far): can type_cast values into a string
+        Features (so far): can type_cast values into a string using MAEK
         '''
 
         # MAEK
@@ -216,7 +208,7 @@ class LOLCodeParser:
 
     def arithmetic_expr(self):
         '''
-        Features (so far): arithmetic operations can be applied with 2 arity; infinite arity not yet implemented.
+        Features (so far): arithmetic operations can be applied with 2 arity; so far no operations on floats yet
         '''
 
         token_type = self.arithmetic_operator().get('type')
@@ -280,12 +272,12 @@ class LOLCodeParser:
     def arithmetic_operator(self):
         tokenType = self.current_token().get('token_type')
         if (tokenType == 'Addition Operator' or
-                tokenType == 'Subtraction Operator' or
-                tokenType == 'Multiplication Operator' or
-                tokenType == 'Division Operator' or
-                tokenType == 'Modulo Operator' or
-                tokenType == 'Greater Than Operator' or
-                tokenType == 'Less Than Operator'
+            tokenType == 'Subtraction Operator' or
+            tokenType == 'Multiplication Operator' or
+            tokenType == 'Division Operator' or
+            tokenType == 'Modulo Operator' or
+            tokenType == 'Greater Than Operator' or
+            tokenType == 'Less Than Operator'
             ):
 
             tokenType = self.current_token().get('token_type')
