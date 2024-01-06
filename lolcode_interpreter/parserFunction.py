@@ -10,12 +10,14 @@ class LOLCodeParser:
         self.errored = False
         self.macros = LOLMacros()
 
-        self.it = None  # Implicit 'it' variable. See variables section on specifications and expression statements
+        self.it = dict()  # Implicit 'it' variable. See variables section on specifications and expression statements
 
         self.currentIdentifier = None
 
-        self.variables = {
-            variableName: {'type': 'NOOB', 'value': None} for variableName in lexer.get_variable_names()}
+        # self.variables = {
+        #     variableName: {'type': 'NOOB', 'value': None} for variableName in lexer.get_variable_names()}
+
+        self.variables = dict()
 
         print(self.variables)
         # for token in self.tokens:
@@ -25,8 +27,8 @@ class LOLCodeParser:
         self.arithmetic_operators = [self.macros.SUM_OF, self.macros.DIFF_OF, self.macros.PRODUKT_OF,
                                      self.macros.QUOSHUNT_OF, self.macros.MOD_OF, self.macros.BIGGR_OF, self.macros.SMALLR_OF]
         print(self.arithmetic_operators)
-        self.literals = [self.macros.NUMBR, self.macros.NUMBAR,
-                         self.macros.TROOF, 'YARN']
+        self.literalTypes = [self.macros.NUMBR, self.macros.NUMBAR,
+                             self.macros.TROOF, 'YARN', self.macros.STRING]
 
     def parse(self):
         self.program()
@@ -84,7 +86,6 @@ class LOLCodeParser:
                 self.variable_declaration()
         self.match(self.macros.BUHBYE)
 
-
     # maek varident a? <literal> | varident is now a <literal>
     # TODO: maek; varident is now a
 
@@ -101,6 +102,7 @@ class LOLCodeParser:
             self.type_cast()
         # for statement starts with identifier
         elif self.current_token().get('token_type') == "Identifier":
+            # TODO: looks like we should do nothing, but this can be used for functions later on.
             self.currentIdentifier = self.current_token().get('token_value')
             self.match(self.macros.IDENTIFIER)
             # if self.current_token() == 'Type Conversion Operator 3':
@@ -121,9 +123,14 @@ class LOLCodeParser:
         self.match(self.macros.I_HAS_A)
         if self.current_token().get('token_type') == self.macros.IDENTIFIER:
             self.currentIdentifier = self.current_token().get('token_value')
-        self.match(self.macros.IDENTIFIER)
+            self.variables[self.currentIdentifier] = {
+                'type': 'NOOB', 'value': None}
+            self.match(self.macros.IDENTIFIER)
+        else:
+            raise ValueError(f"Error: variableIdentifier not found.")
         # the optional ITZ
         if self.current_token().get('token_type') == self.macros.ITZ:
+            print(self.macros.ITZ)
             self.consume_token()
             # assign value of expression to identifier
             self.variables[self.currentIdentifier] = self.expression()
@@ -136,7 +143,10 @@ class LOLCodeParser:
         self.match(self.macros.VISIBLE)
         operand = self.expression()
         if operand:
-            print(operand.get('value'))
+            if operand.get('value') == None:
+                print('NOOB')
+            else:
+                print(operand.get('value'))
 
     def input_statement(self):
         self.match(self.macros.GIMMEH)
@@ -166,7 +176,7 @@ class LOLCodeParser:
             if self.current_token().get('token_type') == self.macros.A:
                 self.match(self.macros.A)
             type_to_cast = self.current_token().get('token_value')
-            self.match(self.literals)
+            self.match(self.literalTypes)
             if type_to_cast == 'YARN':
                 self.variables[self.currentIdentifier]['type'] = 'String'
             # TODO apply type_casting of other types
@@ -176,31 +186,45 @@ class LOLCodeParser:
         # varident IS_NOW_A
         # elif self.current_token().get('token_type') == self.macros.IS_NOW_A:
         #     self.match(self.macros.IS_NOW_A)
-        #     self.match(self.literals)
+        #     self.match(self.literalTypes)
 
     def expression(self):
         '''
         Features (so far): able to be used in: 
                 variable declaration and initialization, 
                 variable assignment and re-assignment
+                TODO: initialization of values from an expression
         '''
 
         tokenType = None
-        if (self.current_token().get('token_type') == 'Numbr' or
-            self.current_token().get('token_type') == 'String' or
-            self.current_token().get('token_type') == 'Troof' or
-                self.current_token().get('token_type') == 'Numbar'):
 
+        # literal return value
+        if (self.current_token().get('token_type') in self.literalTypes):
             tokenType = self.current_token().get('token_type')
-            tokenValue = self.current_token().get('token_value')
+
+            # TODO: get back once typecaster if fully working, maybe we can just use it instead of python's type function
+            if tokenType == 'Numbr':
+                tokenValue = int(self.current_token().get('token_value'))
+            elif tokenType == 'Numbar':
+                tokenValue = float(self.current_token().get('token_value'))
+            else:
+                tokenValue = self.current_token().get('token_value')
+
             self.match(tokenType)
 
+        # identifier return value
         elif (self.current_token().get('token_type') == 'Identifier'):
             tokenType = self.variables[self.current_token().get(
                 'token_value')].get('type')
             tokenValue = self.variables[self.current_token().get(
                 'token_value')].get('value')
             self.match('Identifier')
+
+        # arithmetic expression return value
+        elif (self.current_token().get('token_type') in self.arithmetic_operators):
+            self.arithmetic_expr()
+            tokenType = self.it.get('type')
+            tokenValue = self.it.get('value')
         else:
             raise SyntaxError(
                 f"Unexpected token in expression: {self.current_token()}. Expecting literal, variable, or expression")
@@ -222,8 +246,10 @@ class LOLCodeParser:
         elif self.current_token().get('token_type') == 'Identifier':
             tokenValue = self.variables[self.current_token().get(
                 'token_value')].get('value')
-            operand1 = int(tokenValue)
+            operand1 = tokenValue
             self.match('Identifier')
+        elif self.current_token().get('token_type') in self.arithmetic_operators:
+            operand1 = self.arithmetic_expr()
         else:
             raise SyntaxError(
                 f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
@@ -237,49 +263,61 @@ class LOLCodeParser:
         elif self.current_token().get('token_type') == 'Identifier':
             tokenValue = self.variables[self.current_token().get(
                 'token_value')].get('value')
-            operand2 = int(tokenValue)
+            operand2 = tokenValue
             self.match('Identifier')
+        elif self.current_token().get('token_type') in self.arithmetic_operators:
+            operand2 = self.arithmetic_expr()
         else:
             raise SyntaxError(
                 f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
 
+        print("Operand 1:", operand1)
+        print("Operand 2:", operand2)
+
+        answer = None
         if token_type == 'Addition Operator':
             # Perform action for addition operator
-            self.it = operand1 + operand2
+            answer = operand1 + operand2
         elif token_type == 'Subtraction Operator':
             # Perform action for subtraction operator
-            self.it = operand1 - operand2
+            answer = operand1 - operand2
         elif token_type == 'Multiplication Operator':
             # Perform action for multiplication operator
-            self.it = operand1 * operand2
+            answer = operand1 * operand2
         elif token_type == 'Division Operator':
             # Perform action for division operator
             if operand2 != 0:
-                self.it = operand1 / operand2
+                answer = operand1 / operand2
             else:
                 raise ZeroDivisionError("Division by zero")
         elif token_type == 'Modulo Operator':
             # Perform action for modulo operator
-            self.it = operand1 % operand2
-        elif token_type == 'Greater Than Operator':
-            # Perform action for greater than operator
-            self.it = operand1 > operand2
-        elif token_type == 'Less Than Operator':
-            # Perform action for less than operator
-            self.it = operand1 < operand2
+            answer = operand1 % operand2
+        elif token_type == 'Max Operator':
+            # Perform action for Max operator
+            answer = max(operand1, operand2)
+        elif token_type == 'Min Operator':
+            # Perform action for Min operator
+            answer = min(operand1, operand2)
+
+        # assign values for implicit variable self.it
+        self.it['value'] = answer
+
+        # assign type of self.it
+        if isinstance(answer, (int)):
+            self.it['type'] = 'Numbr'
+
+        elif isinstance(answer, (float)):
+            self.it['type'] = 'Numbar'
+
         print("Implicit IT variable: ", self.it)
 
-    def arithmetic_operator(self):
-        tokenType = self.current_token().get('token_type')
-        if (tokenType == 'Addition Operator' or
-            tokenType == 'Subtraction Operator' or
-            tokenType == 'Multiplication Operator' or
-            tokenType == 'Division Operator' or
-            tokenType == 'Modulo Operator' or
-            tokenType == 'Greater Than Operator' or
-            tokenType == 'Less Than Operator'
-            ):
+        return answer
 
+    def arithmetic_operator(self):
+        tokenType = None
+        tokenValue = None
+        if (self.current_token().get('token_type') in self.arithmetic_operators):
             tokenType = self.current_token().get('token_type')
             tokenValue = self.current_token().get('token_value')
             self.match(tokenType)
