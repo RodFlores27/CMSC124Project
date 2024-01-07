@@ -80,7 +80,7 @@ class LOLCodeLexer:
             (r'^\bWIN\b', 'Troof'),  # Pattern for capturing boolean literals
             (r'^\bFAIL\b', 'Troof'),  # Pattern for capturing boolean literals
             # Pattern for capturing string literals
-            (r'"([^"]*"*(?!""))*"', 'String'),
+            (r'"([^"]*"*(?!""))(?=[^+])*"', 'String'),
             # Pattern for capturing type literals
             (r'^\b(NUMBR|NUMBAR|TROOF|YARN)\b', 'Type'),
             # identifiers

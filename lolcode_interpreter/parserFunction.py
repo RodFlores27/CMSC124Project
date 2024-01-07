@@ -94,7 +94,8 @@ class LOLCodeParser:
         print("Statementing... Current token:", self.current_token())
         # for printing
         if self.current_token().get('token_type') == 'Output Operator':
-            self.print_statement()
+            self.match(self.macros.VISIBLE)
+            self.print_statement([])
         elif self.current_token().get('token_type') == "Input Operator":
             self.input_statement()
         # elif self.current_token() == "SMOOSH":
@@ -137,17 +138,23 @@ class LOLCodeParser:
             self.variables[self.currentIdentifier] = self.expression()
         print("Current variable values", self.variables)
 
-    def print_statement(self):
-        # printing VISIBLE has infinite arity and concatenates all of its operands after casting them to YARNs. Each operand is  separated by a ‘+’ symbol.
-        # At the moment, it can only print with single arity
-        # TODO: allow printing with infinite arity
-        self.match(self.macros.VISIBLE)
-        operand = self.expression()
-        if operand:
-            if operand.get('value') == None:
-                print('NOOB')
+    def print_statement(self, operands):
+        operands.append(self.expression())
+        print("Print Operands", operands)
+
+        # infinite arity implementation
+        if self.current_token().get('token_type') == self.macros.PLUS:
+            self.match(self.macros.PLUS)
+            return self.print_statement(operands)
+
+        string_to_print = ""
+        for operand in operands:
+            # to print NOOB
+            if operand.get('value') == None and len(operands) == 1:
+                string_to_print += "NOOB"
             else:
-                print(operand.get('value'))
+                string_to_print += str(operand.get('value'))
+        print(string_to_print)
 
     def input_statement(self):
         self.match(self.macros.GIMMEH)
@@ -208,6 +215,7 @@ class LOLCodeParser:
                 tokenValue = int(self.current_token().get('token_value'))
             elif tokenType == 'Numbar':
                 tokenValue = float(self.current_token().get('token_value'))
+            # string
             else:
                 tokenValue = self.current_token().get('token_value')
 
@@ -232,10 +240,6 @@ class LOLCodeParser:
         return {'type': tokenType, 'value': tokenValue}
 
     def arithmetic_expr(self):
-        '''
-        Features (so far): arithmetic operations can be applied with 2 arity; so far no operations on floats yet
-        '''
-
         token_type = self.arithmetic_operator().get('type')
         operand1 = None
         operand2 = None

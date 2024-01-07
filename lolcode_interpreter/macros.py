@@ -53,6 +53,7 @@ class LOLMacros():
         self.FOUND_YR = 'Return Statement Delimiter 1'
         self.I_IZ = 'Return Statement Delimiter 2'
         self.MKAY = 'Function Call Delimiter'
+        self.PLUS = 'Print Concatenation Operator'
         self.NUMBR = 'Numbr'
         self.NUMBAR = 'Numbar'
         self.TROOF = 'Troof'
