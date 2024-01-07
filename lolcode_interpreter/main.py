@@ -51,7 +51,7 @@ class LOLCodeLexer:
             (r'^\b(IS NOW A)\b', 'Type Conversion Operator 3'),
             (r'^\b(VISIBLE)\b', 'Output Operator'),
             (r'^\b(GIMMEH)\b', 'Input Operator'),
-            (r'^\b(O RLY\?)\b', 'If-Then Statement Start Delimiter'),
+            (r'^\b(O RLY\?)', 'If-Then Statement Start Delimiter'),
             (r'^\b(YA RLY)\b', 'If Statement Delimiter'),
             (r'^\b(MEBBE)\b', 'Else If Statement Delimiter'),
             (r'^\b(NO WAI)\b', 'Else Statement Delimiter'),

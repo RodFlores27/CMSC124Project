@@ -131,8 +131,12 @@ class LOLCodeParser:
             print("bool success")
         # for comparison operations
         elif self.current_token().get('type') in self.comparison_operators:
-            self.bool_expr()
+            self.comparison_expr()
             print("comparison success")
+        # for if-then statements
+        elif self.current_token().get('type') == 'If-Then Statement Start Delimiter':
+            self.if_then_statement()
+            print("if-then success")
         else:
             raise ValueError(f"Error: Unrecognized statement found.")
 
@@ -178,6 +182,28 @@ class LOLCodeParser:
         self.match(self.macros.IDENTIFIER)
         self.variables[variable_name] = {'type': 'String', 'value': input()}
         print("Current variable values", self.variables)
+
+    def if_then_statement(self):
+        self.match(self.macros.O_RLY)
+
+        # IT value is should be truthy
+        if self.it.get('value'):
+            # start if clause
+            self.match(self.macros.YA_RLY)
+            # keep parsing statements until NO WAI is met
+            while not self.current_token().get('type') in (self.macros.NO_WAI, self.macros.OIC):
+                self.statement()  # Parse the next statement
+            # optional else statement
+            if self.current_token().get('type') == self.macros.NO_WAI:
+                self.match(self.macros.NO_WAI)
+                while not self.current_token().get('type') == self.macros.OIC:
+                    self.statement()  # Parse the next statement
+            self.match(self.macros.OIC)
+        # IT value is not truthy
+        else:
+            while self.current_token().get('type') != self.macros.OIC:
+                self.consume_token()
+            self.match(self.macros.OIC)
 
     def expression(self):
         '''
