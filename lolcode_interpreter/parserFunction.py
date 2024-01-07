@@ -239,87 +239,92 @@ class LOLCodeParser:
                 f"Unexpected token in expression: {self.current_token()}. Expecting literal, variable, or expression")
         return {'type': tokenType, 'value': tokenValue}
 
+    def fetchOperand(self, operand):
+        '''
+        Fetches an operand
+        '''
+
+        # numeric literal
+        if self.current_token().get('token_type') in [self.macros.NUMBAR, self.macros.NUMBR]:
+            operand = int(self.current_token().get('token_value'))
+            self.consume_token()
+        # identifier aka variable
+        elif self.current_token().get('token_type') == 'Identifier':
+            tokenValue = self.variables[self.current_token().get(
+                'token_value')].get('value')
+            try:
+                # integer cast-able strings
+                if tokenValue.isnumeric():
+                    tokenValue = int(tokenValue)
+                # float cast-able strings
+                else:
+                    tokenValue = float(tokenValue)
+            except:
+                pass
+            operand = tokenValue
+            self.match('Identifier')
+        # string literal
+        elif self.current_token().get('token_type') == 'String':
+            token = self.current_token()
+            print(token)
+            tokenValue = self.current_token().get('token_value')
+            try:
+                # integer cast-able strings
+                if tokenValue.isnumeric():
+                    tokenValue = int(tokenValue)
+                # float cast-able strings
+                else:
+                    tokenValue = float(tokenValue)
+            except:
+                pass
+            operand = tokenValue
+            self.match('String')
+        elif self.current_token().get('token_type') == 'Troof':
+            operand = 1 if self.current_token().get('value') == 'WIN' else 0
+            self.match(self.macros.TROOF)
+        # another arithmetic_expr
+        elif self.current_token().get('token_type') in self.arithmetic_operators:
+            operand = self.arithmetic_expr()
+        else:
+            raise SyntaxError(
+                f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
+        return operand
+
     def arithmetic_expr(self):
-        token_type = self.arithmetic_operator().get('type')
+        operator = self.arithmetic_operator().get('type')
         operand1 = None
         operand2 = None
 
-        # Fetch the first operand
-        if self.current_token().get('token_type') in [self.macros.NUMBAR, self.macros.NUMBR]:
-            operand1 = int(self.current_token().get('token_value'))
-            self.consume_token()
-        elif self.current_token().get('token_type') == 'Identifier':
-            tokenValue = self.variables[self.current_token().get(
-                'token_value')].get('value')
-            try:
-                # integer cast-able strings
-                if tokenValue.isnumeric():
-                    tokenValue = int(tokenValue)
-                # float cast-able strings
-                else:
-                    tokenValue = float(tokenValue)
-            except:
-                pass
-            operand1 = tokenValue
-            self.match('Identifier')
-        elif self.current_token().get('token_type') in self.arithmetic_operators:
-            operand1 = self.arithmetic_expr()
-        else:
-            raise SyntaxError(
-                f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
-
+        operand1 = self.fetchOperand(operand1)
         self.match(self.macros.AN)
-
-        # Fetch the second operand
-        if self.current_token().get('token_type') in [self.macros.NUMBAR, self.macros.NUMBR]:
-            operand2 = int(self.current_token().get('token_value'))
-            self.consume_token()
-        elif self.current_token().get('token_type') == 'Identifier':
-            tokenValue = self.variables[self.current_token().get(
-                'token_value')].get('value')
-            try:
-                # integer cast-able strings
-                if tokenValue.isnumeric():
-                    tokenValue = int(tokenValue)
-                # float cast-able strings
-                else:
-                    tokenValue = float(tokenValue)
-            except:
-                pass
-            operand2 = tokenValue
-            self.match('Identifier')
-        elif self.current_token().get('token_type') in self.arithmetic_operators:
-            operand2 = self.arithmetic_expr()
-        else:
-            raise SyntaxError(
-                f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
+        operand2 = self.fetchOperand(operand2)
 
         print("Operand 1:", operand1)
         print("Operand 2:", operand2)
 
         answer = None
-        if token_type == 'Addition Operator':
+        if operator == 'Addition Operator':
             # Perform action for addition operator
             answer = operand1 + operand2
-        elif token_type == 'Subtraction Operator':
+        elif operator == 'Subtraction Operator':
             # Perform action for subtraction operator
             answer = operand1 - operand2
-        elif token_type == 'Multiplication Operator':
+        elif operator == 'Multiplication Operator':
             # Perform action for multiplication operator
             answer = operand1 * operand2
-        elif token_type == 'Division Operator':
+        elif operator == 'Division Operator':
             # Perform action for division operator
             if operand2 != 0:
                 answer = operand1 / operand2
             else:
                 raise ZeroDivisionError("Division by zero")
-        elif token_type == 'Modulo Operator':
+        elif operator == 'Modulo Operator':
             # Perform action for modulo operator
             answer = operand1 % operand2
-        elif token_type == 'Max Operator':
+        elif operator == 'Max Operator':
             # Perform action for Max operator
             answer = max(operand1, operand2)
-        elif token_type == 'Min Operator':
+        elif operator == 'Min Operator':
             # Perform action for Min operator
             answer = min(operand1, operand2)
 

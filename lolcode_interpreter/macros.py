@@ -57,6 +57,8 @@ class LOLMacros():
         self.NUMBR = 'Numbr'
         self.NUMBAR = 'Numbar'
         self.TROOF = 'Troof'
+        # self.WIN = 'True Troof'
+        # self.FAIL = 'False Troof'
         self.STRING = 'String'
         self.TYPE = 'Type'
         self.IDENTIFIER = 'Identifier'
