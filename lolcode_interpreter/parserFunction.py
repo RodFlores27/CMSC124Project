@@ -104,16 +104,19 @@ class LOLCodeParser:
         if self.current_token().get('type') == 'Output Operator':
             self.match(self.macros.VISIBLE)
             self.print_statement([])
+        # user input
         elif self.current_token().get('type') == "Input Operator":
             self.input_statement()
         # elif self.current_token() == "SMOOSH":
         #     self.str_concat()
         elif self.current_token().get('type') == 'Type Conversion Operator 1':  # MAEK
             self.type_cast()
-        # for statement starts with identifier
+        # statement starts with identifier
         elif self.current_token().get('type') == "Identifier":
             # TODO: looks like we should do nothing, but this can be used for functions later on.
             self.currentIdentifier = self.current_token().get('value')
+            # implicitly assign self.it value
+            self.it = self.variables[self.currentIdentifier]
             self.match(self.macros.IDENTIFIER)
             # if self.current_token() == 'Type Conversion Operator 3':
             #     self.type_cast()
@@ -137,6 +140,10 @@ class LOLCodeParser:
         elif self.current_token().get('type') == 'If-Then Statement Start Delimiter':
             self.if_then_statement()
             print("if-then success")
+        # for switch statements
+        elif self.current_token().get('type') == 'Switch Statement Start Delimiter':
+            self.switch_statement()
+            print("switch statement success")
         else:
             raise ValueError(f"Error: Unrecognized statement found.")
 
@@ -182,6 +189,70 @@ class LOLCodeParser:
         self.match(self.macros.IDENTIFIER)
         self.variables[variable_name] = {'type': 'String', 'value': input()}
         print("Current variable values", self.variables)
+
+    def switch_statement(self):
+        self.match(self.macros.WTF)
+        print(self.current_token().get('value'))
+
+        # optional switch cases
+        # Flag for keeping execution of statements until GTFO or OIC is met
+        self.switch_case_skipped_GTFO = False
+        while self.current_token().get('type') != self.macros.OIC:
+            self.switch_case()
+
+        # end of switch statement
+        self.match(self.macros.OIC)
+
+    def switch_case(self):
+        case = None
+        if self.current_token().get('type') == self.macros.OMG:
+            self.match(self.macros.OMG)
+            case = self.expression().get('value')
+            it_value = self.it.get('value')
+            print("Case", case)
+            print("IT", it_value)
+            try:
+                # integer cast-able strings
+                if it_value.isnumeric():
+                    it_value = int(it_value)
+                # float cast-able strings
+                else:
+                    it_value = float(it_value)
+            except:
+                pass
+            # usual case
+            if case == it_value and not self.switch_case_skipped_GTFO:
+                # keep parsing statements
+                while self.current_token().get('type') not in (self.macros.GTFO, self.macros.OMG, self.macros.OMGWTF, self.macros.OIC):
+                    self.statement()  # Parse the next statement
+                if self.current_token().get('type') == self.macros.GTFO:
+                    self.match(self.macros.GTFO)
+                    # skip the rest of the cases
+                    while self.current_token().get('type') != (self.macros.OIC):
+                        self.consume_token()
+                if self.current_token().get('type') in (self.macros.OMG, self.macros.OMGWTF):
+                    self.switch_case_skipped_GTFO = True
+                    return
+
+            # special case
+            elif self.switch_case_skipped_GTFO:
+                while self.current_token().get('type') not in (self.macros.OMG, self.macros.OMGWTF, self.macros.GTFO):
+                    self.statement()
+                if self.current_token().get('type') == self.macros.GTFO:
+                    self.match(self.macros.GTFO)
+                    while self.current_token().get('type') != (self.macros.OIC):
+                        self.consume_token()
+
+            # case != IT, skip rest of lines until next case
+            else:
+                while self.current_token().get('type') not in (self.macros.OMG, self.macros.OMGWTF):
+                    self.consume_token()
+
+        # optional OMGWTF aka default case
+        elif self.current_token().get('type') == self.macros.OMGWTF:
+            self.match(self.macros.OMGWTF)
+            while self.current_token().get('type') != self.macros.OIC:
+                self.statement()  # Parse the next statement
 
     def if_then_statement(self):
         self.match(self.macros.O_RLY)

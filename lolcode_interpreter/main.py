@@ -56,7 +56,7 @@ class LOLCodeLexer:
             (r'^\b(MEBBE)\b', 'Else If Statement Delimiter'),
             (r'^\b(NO WAI)\b', 'Else Statement Delimiter'),
             (r'^\b(OIC)\b', 'If-Then Statement End Delimiter'),
-            (r'^\b(WTF\?)\b', 'Switch Statement Start Delimiter'),
+            (r'^\b(WTF\?)', 'Switch Statement Start Delimiter'),
             (r'^\b(OMG)\b', 'Case Statement Start Delimiter'),
             (r'^\b(OMGWTF)\b', 'Default Case Statement Start Delimiter'),
             (r'^\b((IM IN YR))\b', 'Loop Statement Start Delimiter'),
