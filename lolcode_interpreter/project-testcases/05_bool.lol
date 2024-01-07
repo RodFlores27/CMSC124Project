@@ -5,7 +5,8 @@ HAI
         I HAS A y
     BUHBYE
 
-    VISIBLE "x:" WIN ", y:" WIN
+    BTW orig-> VISIBLE "x:" WIN ", y:" WIN
+    VISIBLE "x:" + WIN + ", y:" + WIN
     x R WIN
     y R WIN
 
