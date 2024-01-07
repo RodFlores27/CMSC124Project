@@ -22,7 +22,7 @@ class LOLCodeParser:
 
         print(self.variables)
         # for token in self.tokens:
-        #     print(token.get('token_type'), token.get('token_value'))
+        #     print(token.get('type'), token.get('value'))
 
         # Lists of values
         self.literalTypes = [self.macros.NUMBR, self.macros.NUMBAR,
@@ -30,6 +30,7 @@ class LOLCodeParser:
         self.arithmetic_operators = [self.macros.SUM_OF, self.macros.DIFF_OF, self.macros.PRODUKT_OF,
                                      self.macros.QUOSHUNT_OF, self.macros.MOD_OF, self.macros.BIGGR_OF, self.macros.SMALLR_OF]
         print("Arithmetic Operators:", self.arithmetic_operators)
+        self.infinite_booling = False
         self.bool_operators = [self.macros.BOTH_OF, self.macros.EITHER_OF,
                                self.macros.WON_OF, self.macros.NOT, self.macros.ANY_OF, self.macros.ALL_OF]
         print("Bool Operators:", self.bool_operators)
@@ -38,16 +39,16 @@ class LOLCodeParser:
         self.program()
 
     def match(self, expected_type):        # find the macroName of the expectedType
-        if self.current_token().get('token_type') == expected_type:
+        if self.current_token().get('type') == expected_type:
             macroNameOfExpectedType = [attr for attr in dir(
                 self.macros) if getattr(self.macros, attr) == expected_type][0]
-            print(self.current_token().get('token_type'))
+            print(self.current_token().get('type'))
             self.consume_token()
         elif type(expected_type) == list:
             macroNameOfExpectedType = [attr for attr in dir(
                 self.macros) if getattr(self.macros, attr) == expected_type]
-            if self.current_token().get('token_value') in expected_type:
-                print(self.current_token().get('token_value'))
+            if self.current_token().get('value') in expected_type:
+                print(self.current_token().get('value'))
                 self.consume_token()
         else:
             print(
@@ -66,7 +67,7 @@ class LOLCodeParser:
         self.match(self.macros.HAI)
         # Loop over all tokens until KTHXBYE is found
 
-        while not self.current_token().get('token_type') == 'Program End Delimiter':
+        while not self.current_token().get('type') == 'Program End Delimiter':
             self.statement()  # Parse the next statement
 
         self.match(self.macros.KTHXBYE)
@@ -84,9 +85,9 @@ class LOLCodeParser:
 
         self.match(self.macros.WAZZUP)
         # Optional declaration or initialization of variables
-        if self.current_token().get('token_type') == self.macros.I_HAS_A:
+        if self.current_token().get('type') == self.macros.I_HAS_A:
             # To deal with multiple declarations
-            while self.tokens[self.current_token_index+1].get('token_type') != self.macros.BUHBYE and self.current_token().get('token_type') == self.macros.I_HAS_A:
+            while self.tokens[self.current_token_index+1].get('type') != self.macros.BUHBYE and self.current_token().get('type') == self.macros.I_HAS_A:
                 self.variable_declaration()
         self.match(self.macros.BUHBYE)
 
@@ -96,31 +97,31 @@ class LOLCodeParser:
     def statement(self):
         print("Statementing... Current token:", self.current_token())
         # for printing
-        if self.current_token().get('token_type') == 'Output Operator':
+        if self.current_token().get('type') == 'Output Operator':
             self.match(self.macros.VISIBLE)
             self.print_statement([])
-        elif self.current_token().get('token_type') == "Input Operator":
+        elif self.current_token().get('type') == "Input Operator":
             self.input_statement()
         # elif self.current_token() == "SMOOSH":
         #     self.str_concat()
-        elif self.current_token().get('token_type') == 'Type Conversion Operator 1':  # MAEK
+        elif self.current_token().get('type') == 'Type Conversion Operator 1':  # MAEK
             self.type_cast()
         # for statement starts with identifier
-        elif self.current_token().get('token_type') == "Identifier":
+        elif self.current_token().get('type') == "Identifier":
             # TODO: looks like we should do nothing, but this can be used for functions later on.
-            self.currentIdentifier = self.current_token().get('token_value')
+            self.currentIdentifier = self.current_token().get('value')
             self.match(self.macros.IDENTIFIER)
             # if self.current_token() == 'Type Conversion Operator 3':
             #     self.type_cast()
-            if self.current_token().get('token_type') == "Assignment Operator":
+            if self.current_token().get('type') == "Assignment Operator":
                 self.assignment_statement()
-        elif self.current_token().get('token_type') == 'Variable Declaration Start Delimiter':
+        elif self.current_token().get('type') == 'Variable Declaration Start Delimiter':
             self.data_segment()
         # for arithmetic operations
-        elif self.current_token().get('token_type') in self.arithmetic_operators:
+        elif self.current_token().get('type') in self.arithmetic_operators:
             self.arithmetic_expr()
             print("arithmetic success")
-        elif self.current_token().get('token_type') in self.bool_operators:
+        elif self.current_token().get('type') in self.bool_operators:
             print("helo")
             self.bool_expr()
             print("bool success")
@@ -129,15 +130,15 @@ class LOLCodeParser:
 
     def variable_declaration(self):
         self.match(self.macros.I_HAS_A)
-        if self.current_token().get('token_type') == self.macros.IDENTIFIER:
-            self.currentIdentifier = self.current_token().get('token_value')
+        if self.current_token().get('type') == self.macros.IDENTIFIER:
+            self.currentIdentifier = self.current_token().get('value')
             self.variables[self.currentIdentifier] = {
                 'type': 'NOOB', 'value': None}
             self.match(self.macros.IDENTIFIER)
         else:
             raise ValueError(f"Error: variableIdentifier not found.")
         # the optional ITZ
-        if self.current_token().get('token_type') == self.macros.ITZ:
+        if self.current_token().get('type') == self.macros.ITZ:
             print(self.macros.ITZ)
             self.consume_token()
             # assign value of expression to identifier
@@ -147,10 +148,10 @@ class LOLCodeParser:
     def print_statement(self, operands):
         # Operand accumulation for recursion
         operands.append(self.expression())
-        print("Print Operands", operands)
+        # print("Print Operands", operands)
 
         # infinite arity implementation
-        if self.current_token().get('token_type') == self.macros.PLUS:
+        if self.current_token().get('type') == self.macros.PLUS:
             self.match(self.macros.PLUS)
             return self.print_statement(operands)
 
@@ -165,7 +166,7 @@ class LOLCodeParser:
 
     def input_statement(self):
         self.match(self.macros.GIMMEH)
-        variable_name = self.current_token().get('token_value')
+        variable_name = self.current_token().get('value')
         self.match(self.macros.IDENTIFIER)
         self.variables[variable_name] = {'type': 'String', 'value': input()}
         print("Current variable values", self.variables)
@@ -181,35 +182,35 @@ class LOLCodeParser:
         tokenType = None
 
         # literal return value
-        if (self.current_token().get('token_type') in self.literalTypes):
-            tokenType = self.current_token().get('token_type')
+        if (self.current_token().get('type') in self.literalTypes):
+            tokenType = self.current_token().get('type')
 
             # TODO: get back once typecaster if fully working, maybe we can just use it instead of python's type function
             if tokenType == 'Numbr':
-                tokenValue = int(self.current_token().get('token_value'))
+                tokenValue = int(self.current_token().get('value'))
             elif tokenType == 'Numbar':
-                tokenValue = float(self.current_token().get('token_value'))
+                tokenValue = float(self.current_token().get('value'))
             # string
             else:
-                tokenValue = self.current_token().get('token_value')
+                tokenValue = self.current_token().get('value')
 
             self.match(tokenType)
 
         # identifier return value
-        elif (self.current_token().get('token_type') == 'Identifier'):
+        elif (self.current_token().get('type') == 'Identifier'):
             tokenType = self.variables[self.current_token().get(
-                'token_value')].get('type')
+                'value')].get('type')
             tokenValue = self.variables[self.current_token().get(
-                'token_value')].get('value')
+                'value')].get('value')
             self.match('Identifier')
 
         # arithmetic expression return value
-        elif (self.current_token().get('token_type') in self.arithmetic_operators):
+        elif (self.current_token().get('type') in self.arithmetic_operators):
             self.arithmetic_expr()
             tokenType = self.it.get('type')
             tokenValue = self.it.get('value')
         # bool expression return value
-        elif (self.current_token().get('token_type') in self.bool_operators):
+        elif (self.current_token().get('type') in self.bool_operators):
             self.bool_expr()
             tokenType = self.it.get('type')
             tokenValue = self.it.get('value')
@@ -218,19 +219,20 @@ class LOLCodeParser:
                 f"Unexpected token in expression: {self.current_token()}. Expecting literal, variable, or expression")
         return {'type': tokenType, 'value': tokenValue}
 
-    def fetchOperand(self, operand):
+    def fetchOperand(self):
         '''
         Fetches an operand
         '''
+        operand = None
 
         # numeric literal
-        if self.current_token().get('token_type') in [self.macros.NUMBAR, self.macros.NUMBR]:
-            operand = int(self.current_token().get('token_value'))
+        if self.current_token().get('type') in [self.macros.NUMBAR, self.macros.NUMBR]:
+            operand = int(self.current_token().get('value'))
             self.consume_token()
         # identifier aka variable
-        elif self.current_token().get('token_type') == 'Identifier':
+        elif self.current_token().get('type') == 'Identifier':
             tokenValue = self.variables[self.current_token().get(
-                'token_value')].get('value')
+                'value')].get('value')
             try:
                 # integer cast-able strings
                 if tokenValue.isnumeric():
@@ -243,10 +245,10 @@ class LOLCodeParser:
             operand = tokenValue
             self.match('Identifier')
         # string literal
-        elif self.current_token().get('token_type') == 'String':
+        elif self.current_token().get('type') == 'String':
             token = self.current_token()
             print(token)
-            tokenValue = self.current_token().get('token_value')
+            tokenValue = self.current_token().get('value')
             try:
                 # integer cast-able strings
                 if tokenValue.isnumeric():
@@ -260,25 +262,113 @@ class LOLCodeParser:
             operand = tokenValue
             self.match('String')
         # troof
-        elif self.current_token().get('token_type') == 'Troof':
+        elif self.current_token().get('type') == 'Troof':
+            print("here", self.current_token().get('value'))
             operand = 1 if self.current_token().get('value') == 'WIN' else 0
             self.match(self.macros.TROOF)
-        # another arithmetic_expr
-        elif self.current_token().get('token_type') in self.arithmetic_operators:
+        # an arithmetic_expr
+        elif self.current_token().get('type') in self.arithmetic_operators:
             operand = self.arithmetic_expr()
+        # a bool_expr
+        elif self.current_token().get('type') in self.bool_operators:
+            operand = self.bool_expr()
         else:
             raise SyntaxError(
                 f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
         return operand
 
+    def bool_expr(self):
+        # TODO: disable having infinite arity bool operators when one is currently in use
+
+        operator = self.bool_operator().get('type')
+        # print("Operator", operator)
+
+        # Not operator -> single arity
+        if operator == self.macros.NOT:
+            operand = self.fetchOperand()
+            print("Operand for NOT:", operand)
+            # Perform action for NOT operator
+            if operand == 'FAIL':
+                answer = 'WIN'
+            else:
+                answer = 'FAIL'
+
+        # Binary arity bool operators
+        elif operator in [self.macros.BOTH_OF, self.macros.EITHER_OF, self.macros, self.macros.WON_OF]:
+            operand1 = self.fetchOperand()
+            self.match(self.macros.AN)
+            operand2 = self.fetchOperand()
+
+            print("Operand 1:", operand1)
+            print("Operand 2:", operand2)
+
+            answer = None
+            # booleans can make use of Troofs or 0's and 1's
+            if operator == 'Logical AND Operator':
+                # Perform action for AND operator
+                if operand1 in (1, 'WIN') and operand2 in (1, 'WIN'):
+                    answer = 'WIN'
+                else:
+                    answer = 'FAIL'
+
+            elif operator == 'Logical OR Operator':
+                # Perform action for OR operator
+                if operand1 in (1, 'WIN') or operand2 in (1, 'WIN'):
+                    answer = 'WIN'
+                else:
+                    answer = 'FAIL'
+
+            elif operator == 'Logical XOR Operator':
+                # Perform action for XOR operator
+                operand1_bool = operand1 in (1, 'WIN')
+                operand2_bool = operand2 in (1, 'WIN')
+
+                if operand1_bool ^ operand2_bool:  # XOR operation
+                    answer = 'WIN'
+                else:
+                    answer = 'FAIL'
+        # Infinite arity bool operators
+        elif (operator in [self.macros.ANY_OF, self.macros.ALL_OF]) and not self.infinite_booling:
+            self.infinite_booling = True  # To disable argument that's an infinite arity bool
+            first_operand = self.fetchOperand()
+            operands = [first_operand]
+            # infinite arity implementation
+            while self.current_token().get('type') == self.macros.AN:
+                self.match(self.macros.AN)
+                operands.append(self.fetchOperand())
+            print("Operands", operands)
+
+            # statement terminator
+            self.match(self.macros.MKAY)
+
+            if operator == 'Infinite Arity Logical OR Operator':
+                # Perform action for OR operator
+                answer = any((operand != 'FAIL' and operand != 0)
+                             for operand in operands)
+
+            elif operator == 'Infinite Arity Logical AND Operator':
+                # Perform action for AND operator
+                answer = all((operand != 'FAIL' and operand !=
+                             0) for operand in operands)
+            self.infinite_booling = False
+
+        # assign values for implicit variable self.it
+        self.it['type'] = 'Troof'
+        if answer == True or answer == 'WIN':
+            self.it['value'] = 'WIN'
+        elif answer == False or answer == 'FAIL':
+            self.it['value'] = 'FAIL'
+
+        print("Implicit IT variable: ", self.it)
+        print("Current variables", self.variables)
+        return answer
+
     def arithmetic_expr(self):
         operator = self.arithmetic_operator().get('type')
-        operand1 = None
-        operand2 = None
 
-        operand1 = self.fetchOperand(operand1)
+        operand1 = self.fetchOperand()
         self.match(self.macros.AN)
-        operand2 = self.fetchOperand(operand2)
+        operand2 = self.fetchOperand()
 
         print("Operand 1:", operand1)
         print("Operand 2:", operand2)
@@ -326,9 +416,9 @@ class LOLCodeParser:
     def arithmetic_operator(self):
         tokenType = None
         tokenValue = None
-        if (self.current_token().get('token_type') in self.arithmetic_operators):
-            tokenType = self.current_token().get('token_type')
-            tokenValue = self.current_token().get('token_value')
+        if (self.current_token().get('type') in self.arithmetic_operators):
+            tokenType = self.current_token().get('type')
+            tokenValue = self.current_token().get('value')
             self.match(tokenType)
         else:
             raise SyntaxError(
@@ -370,13 +460,13 @@ class LOLCodeParser:
         '''
 
         # MAEK
-        if self.current_token().get('token_type') == self.macros.MAEK:
+        if self.current_token().get('type') == self.macros.MAEK:
             self.match(self.macros.MAEK)
-            self.currentIdentifier = self.current_token().get('token_value')
+            self.currentIdentifier = self.current_token().get('value')
             self.match(self.macros.IDENTIFIER)
-            if self.current_token().get('token_type') == self.macros.A:
+            if self.current_token().get('type') == self.macros.A:
                 self.match(self.macros.A)
-            type_to_cast = self.current_token().get('token_value')
+            type_to_cast = self.current_token().get('value')
             self.match(self.literalTypes)
             if type_to_cast == 'YARN':
                 self.variables[self.currentIdentifier]['type'] = 'String'
@@ -385,70 +475,16 @@ class LOLCodeParser:
             print("Current variable values", self.variables)
         # TODO apply other way of type_casting
         # varident IS_NOW_A
-        # elif self.current_token().get('token_type') == self.macros.IS_NOW_A:
+        # elif self.current_token().get('type') == self.macros.IS_NOW_A:
         #     self.match(self.macros.IS_NOW_A)
         #     self.match(self.literalTypes)
-
-    def bool_expr(self):
-        operator = self.bool_operator().get('type')
-        # print("Operator", operator)
-
-        # Not operator -> single arity
-        if operator == self.macros.NOT:
-            operand = None
-            operand = self.fetchOperand(operand)
-            print("Operand for NOT:", operand)
-
-            # Perform action for NOT operator
-            answer = not operand
-
-        # Binary arity bool operators
-        elif operator in [self.macros.BOTH_OF, self.macros.EITHER_OF, self.macros, self.macros.WON_OF]:
-            operand1 = None
-            operand2 = None
-
-            operand1 = self.fetchOperand(operand1)
-            self.match(self.macros.AN)
-            operand2 = self.fetchOperand(operand2)
-
-            print("Operand 1:", operand1)
-            print("Operand 2:", operand2)
-
-            answer = None
-            if operator == 'Logical AND Operator':
-                # Perform action for AND operator
-                answer = operand1 and operand2
-            elif operator == 'Logical OR Operator':
-                # Perform action for OR operator
-                answer = operand1 or operand2
-
-            elif operator == 'Logical XOR Operator':
-                # Perform action for XOR operator
-                answer = operand1 != operand2  # not equal is the same truth table with xor
-
-        elif operator in [self.macros.ANY_OF, self.macros.ALL_OF]:
-            if operator == 'Infinite Arity Logical OR Operator':
-                # Perform action for OR operator
-                answer = operand1 and operand2
-
-            elif operator == 'Infinite Arity Logical AND Operator':
-                # Perform action for AND operator
-                answer = operand1 and operand2
-
-        # assign values for implicit variable self.it
-        self.it['type'] = 'Troof'
-        self.it['value'] = answer
-
-        print("Implicit IT variable: ", self.it)
-
-        return answer
 
     def bool_operator(self):
         tokenType = None
         tokenValue = None
-        if (self.current_token().get('token_type') in self.bool_operators):
-            tokenType = self.current_token().get('token_type')
-            tokenValue = self.current_token().get('token_value')
+        if (self.current_token().get('type') in self.bool_operators):
+            tokenType = self.current_token().get('type')
+            tokenValue = self.current_token().get('value')
             self.match(tokenType)
         else:
             raise SyntaxError(

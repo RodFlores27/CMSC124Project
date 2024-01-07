@@ -115,7 +115,7 @@ class LOLCodeLexer:
 
                         if token_type not in {self.macros.BTW, self.macros.OBTW}:
                             self.tokens.append(
-                                {'token_type': token_type, 'token_value': token_value})
+                                {'type': token_type, 'value': token_value})
 
                         if token_type == 'Identifier':
                             variable_name = match.group().strip()  # Remove leading and trailing whitespace
