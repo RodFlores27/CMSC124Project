@@ -34,6 +34,10 @@ class LOLCodeParser:
         self.bool_operators = [self.macros.BOTH_OF, self.macros.EITHER_OF,
                                self.macros.WON_OF, self.macros.NOT, self.macros.ANY_OF, self.macros.ALL_OF]
         print("Bool Operators:", self.bool_operators)
+        self.comparing = False
+        self.comparison_operators = [
+            self.macros.BOTH_SAEM, self.macros.DIFFRINT]
+        print("Comparison Operators:", self.comparison_operators)
 
     def parse(self):
         self.program()
@@ -121,10 +125,14 @@ class LOLCodeParser:
         elif self.current_token().get('type') in self.arithmetic_operators:
             self.arithmetic_expr()
             print("arithmetic success")
+        # for boolean operations
         elif self.current_token().get('type') in self.bool_operators:
-            print("helo")
             self.bool_expr()
             print("bool success")
+        # for comparison operations
+        elif self.current_token().get('type') in self.comparison_operators:
+            self.bool_expr()
+            print("comparison success")
         else:
             raise ValueError(f"Error: Unrecognized statement found.")
 
@@ -214,6 +222,11 @@ class LOLCodeParser:
             self.bool_expr()
             tokenType = self.it.get('type')
             tokenValue = self.it.get('value')
+        # comparison expression return value
+        elif (self.current_token().get('type') in self.comparison_operators):
+            self.comparison_expr()
+            tokenType = self.it.get('type')
+            tokenValue = self.it.get('value')
         else:
             raise SyntaxError(
                 f"Unexpected token in expression: {self.current_token()}. Expecting literal, variable, or expression")
@@ -225,9 +238,13 @@ class LOLCodeParser:
         '''
         operand = None
 
-        # numeric literal
-        if self.current_token().get('type') in [self.macros.NUMBAR, self.macros.NUMBR]:
+        # int literal
+        if self.current_token().get('type') == self.macros.NUMBR:
             operand = int(self.current_token().get('value'))
+            self.consume_token()
+        # float literal
+        elif self.current_token().get('type') == self.macros.NUMBAR:
+            operand = float(self.current_token().get('value'))
             self.consume_token()
         # identifier aka variable
         elif self.current_token().get('type') == 'Identifier':
@@ -241,6 +258,11 @@ class LOLCodeParser:
                 else:
                     tokenValue = float(tokenValue)
             except:
+                if self.comparing == True:
+                    print("here")
+                    raise SyntaxError(
+                        f"Invalid token for comparison expression: {self.current_token()}. Automatic Typecasting is disabled.")
+                # TODO: put appropriate error message here.
                 pass
             operand = tokenValue
             self.match('Identifier')
@@ -257,13 +279,20 @@ class LOLCodeParser:
                 else:
                     tokenValue = float(tokenValue)
             except:
+                if self.comparing == True:
+                    print("here")
+                    raise SyntaxError(
+                        f"Invalid token for comparison expression: {self.current_token()}. Automatic Typecasting is disabled.")
                 # TODO: put appropriate error message here.
                 pass
             operand = tokenValue
             self.match('String')
         # troof
         elif self.current_token().get('type') == 'Troof':
-            print("here", self.current_token().get('value'))
+            if self.comparing == True:
+                raise SyntaxError(
+                    "Invalid token for comparison expression: {self.current_token()}. Automatic Typecasting is disabled.")
+
             operand = 1 if self.current_token().get('value') == 'WIN' else 0
             self.match(self.macros.TROOF)
         # an arithmetic_expr
@@ -274,94 +303,53 @@ class LOLCodeParser:
             operand = self.bool_expr()
         else:
             raise SyntaxError(
-                f"Unexpected token in expression: {self.current_token()}. Expecting numerical value")
+                f"Unexpected token in expression: {self.current_token()}.")
+
         return operand
 
-    def bool_expr(self):
-        # TODO: disable having infinite arity bool operators when one is currently in use
+    def comparison_expr(self):
+        self.comparing = True
+        operator = self.comparison_operator().get('type')
+        print("Operation: ", operator)
 
-        operator = self.bool_operator().get('type')
-        # print("Operator", operator)
+        operand1 = self.fetchOperand()
+        self.comparing = False
+        self.match(self.macros.AN)
+        operand2 = self.fetchOperand()
+        self.comparing = False
 
-        # Not operator -> single arity
-        if operator == self.macros.NOT:
-            operand = self.fetchOperand()
-            print("Operand for NOT:", operand)
-            # Perform action for NOT operator
-            if operand == 'FAIL':
-                answer = 'WIN'
-            else:
-                answer = 'FAIL'
+        print("Operand 1:", operand1)
+        print("Operand 2:", operand2)
 
-        # Binary arity bool operators
-        elif operator in [self.macros.BOTH_OF, self.macros.EITHER_OF, self.macros, self.macros.WON_OF]:
-            operand1 = self.fetchOperand()
-            self.match(self.macros.AN)
-            operand2 = self.fetchOperand()
+        answer = None
+        if operator == 'Equality Operator':
+            # Perform action for equality operator
+            answer = operand1 == operand2
+        elif operator == 'Inequality Operator':
+            # Perform action for inequality operator
+            answer = operand1 != operand2
 
-            print("Operand 1:", operand1)
-            print("Operand 2:", operand2)
-
-            answer = None
-            # booleans can make use of Troofs or 0's and 1's
-            if operator == 'Logical AND Operator':
-                # Perform action for AND operator
-                if operand1 in (1, 'WIN') and operand2 in (1, 'WIN'):
-                    answer = 'WIN'
-                else:
-                    answer = 'FAIL'
-
-            elif operator == 'Logical OR Operator':
-                # Perform action for OR operator
-                if operand1 in (1, 'WIN') or operand2 in (1, 'WIN'):
-                    answer = 'WIN'
-                else:
-                    answer = 'FAIL'
-
-            elif operator == 'Logical XOR Operator':
-                # Perform action for XOR operator
-                operand1_bool = operand1 in (1, 'WIN')
-                operand2_bool = operand2 in (1, 'WIN')
-
-                if operand1_bool ^ operand2_bool:  # XOR operation
-                    answer = 'WIN'
-                else:
-                    answer = 'FAIL'
-        # Infinite arity bool operators
-        elif (operator in [self.macros.ANY_OF, self.macros.ALL_OF]) and not self.infinite_booling:
-            self.infinite_booling = True  # To disable argument that's an infinite arity bool
-            first_operand = self.fetchOperand()
-            operands = [first_operand]
-            # infinite arity implementation
-            while self.current_token().get('type') == self.macros.AN:
-                self.match(self.macros.AN)
-                operands.append(self.fetchOperand())
-            print("Operands", operands)
-
-            # statement terminator
-            self.match(self.macros.MKAY)
-
-            if operator == 'Infinite Arity Logical OR Operator':
-                # Perform action for OR operator
-                answer = any((operand != 'FAIL' and operand != 0)
-                             for operand in operands)
-
-            elif operator == 'Infinite Arity Logical AND Operator':
-                # Perform action for AND operator
-                answer = all((operand != 'FAIL' and operand !=
-                             0) for operand in operands)
-            self.infinite_booling = False
+        # flag to set if comparing. Needed because comparing must disable implicit typecasting
+        self.comparing = False
 
         # assign values for implicit variable self.it
         self.it['type'] = 'Troof'
-        if answer == True or answer == 'WIN':
-            self.it['value'] = 'WIN'
-        elif answer == False or answer == 'FAIL':
-            self.it['value'] = 'FAIL'
-
+        self.it['value'] = answer
         print("Implicit IT variable: ", self.it)
-        print("Current variables", self.variables)
+
         return answer
+
+    def comparison_operator(self):
+        tokenType = None
+        tokenValue = None
+        if (self.current_token().get('type') in self.comparison_operators):
+            tokenType = self.current_token().get('type')
+            tokenValue = self.current_token().get('value')
+            self.match(tokenType)
+        else:
+            raise SyntaxError(
+                f"Unexpected token in expression: {self.current_token()}. Expecting comparison operator")
+        return {'type': tokenType, 'value': tokenValue}
 
     def arithmetic_expr(self):
         operator = self.arithmetic_operator().get('type')
@@ -478,6 +466,90 @@ class LOLCodeParser:
         # elif self.current_token().get('type') == self.macros.IS_NOW_A:
         #     self.match(self.macros.IS_NOW_A)
         #     self.match(self.literalTypes)
+
+    def bool_expr(self):
+        operator = self.bool_operator().get('type')
+        # print("Operator", operator)
+
+        # Not operator -> single arity
+        if operator == self.macros.NOT:
+            operand = self.fetchOperand()
+            print("Operand for NOT:", operand)
+            # Perform action for NOT operator
+            if operand == 'FAIL':
+                answer = 'WIN'
+            else:
+                answer = 'FAIL'
+
+        # Binary arity bool operators
+        elif operator in [self.macros.BOTH_OF, self.macros.EITHER_OF, self.macros, self.macros.WON_OF]:
+            operand1 = self.fetchOperand()
+            self.match(self.macros.AN)
+            operand2 = self.fetchOperand()
+
+            print("Operand 1:", operand1)
+            print("Operand 2:", operand2)
+
+            answer = None
+            # booleans can make use of Troofs or 0's and 1's
+            if operator == 'Logical AND Operator':
+                # Perform action for AND operator
+                if operand1 in (1, 'WIN') and operand2 in (1, 'WIN'):
+                    answer = 'WIN'
+                else:
+                    answer = 'FAIL'
+
+            elif operator == 'Logical OR Operator':
+                # Perform action for OR operator
+                if operand1 in (1, 'WIN') or operand2 in (1, 'WIN'):
+                    answer = 'WIN'
+                else:
+                    answer = 'FAIL'
+
+            elif operator == 'Logical XOR Operator':
+                # Perform action for XOR operator
+                operand1_bool = operand1 in (1, 'WIN')
+                operand2_bool = operand2 in (1, 'WIN')
+
+                if operand1_bool ^ operand2_bool:  # XOR operation
+                    answer = 'WIN'
+                else:
+                    answer = 'FAIL'
+        # Infinite arity bool operators
+        elif (operator in [self.macros.ANY_OF, self.macros.ALL_OF]) and not self.infinite_booling:
+            self.infinite_booling = True  # To disable argument that's an infinite arity bool
+            first_operand = self.fetchOperand()
+            operands = [first_operand]
+            # infinite arity implementation
+            while self.current_token().get('type') == self.macros.AN:
+                self.match(self.macros.AN)
+                operands.append(self.fetchOperand())
+            print("Operands", operands)
+
+            # statement terminator
+            self.match(self.macros.MKAY)
+
+            if operator == 'Infinite Arity Logical OR Operator':
+                # Perform action for OR operator
+                answer = any((operand != 'FAIL' and operand != 0)
+                             for operand in operands)
+
+            elif operator == 'Infinite Arity Logical AND Operator':
+                # Perform action for AND operator
+                answer = all((operand != 'FAIL' and operand !=
+                             0) for operand in operands)
+            self.infinite_booling = False
+
+        # assign values for implicit variable self.it
+        self.it['type'] = 'Troof'
+        if answer == True or answer == 'WIN':
+            self.it['value'] = 'WIN'
+        elif answer == False or answer == 'FAIL':
+            self.it['value'] = 'FAIL'
+
+        print("Implicit IT variable: ", self.it)
+        print("Current variables", self.variables)
+        return answer
 
     def bool_operator(self):
         tokenType = None

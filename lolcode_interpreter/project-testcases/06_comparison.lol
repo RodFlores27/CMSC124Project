@@ -14,12 +14,12 @@ HAI
     BTW x!=y
     VISIBLE DIFFRINT x AN y
 
-    OBTW
-        x >= y
-        x <= y
-        x < y
-        x > y
-    TLDR
+    BTW
+    BTW    x >= y
+    BTW    x <= y
+    BTW    x < y
+    BTW    x > y
+
     VISIBLE BOTH SAEM BIGGR OF x AN y AN x
     VISIBLE BOTH SAEM x AN SMALLR OF x AN y
     VISIBLE DIFFRINT BIGGR OF x AN y AN x

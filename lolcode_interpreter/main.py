@@ -4,6 +4,8 @@ import sys
 import re
 from macros import LOLMacros
 
+# TODO: fix OBTW TLDR
+
 
 class LOLCodeLexer:
     def __init__(self, source_code):
