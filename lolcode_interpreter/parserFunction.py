@@ -1,5 +1,6 @@
 import re
 from macros import LOLMacros
+from decimal import Decimal
 
 
 class LOLCodeParser:
@@ -246,6 +247,15 @@ class LOLCodeParser:
         elif self.current_token().get('token_type') == 'Identifier':
             tokenValue = self.variables[self.current_token().get(
                 'token_value')].get('value')
+            try:
+                # integer cast-able strings
+                if tokenValue.isnumeric():
+                    tokenValue = int(tokenValue)
+                # float cast-able strings
+                else:
+                    tokenValue = float(tokenValue)
+            except:
+                pass
             operand1 = tokenValue
             self.match('Identifier')
         elif self.current_token().get('token_type') in self.arithmetic_operators:
@@ -263,6 +273,15 @@ class LOLCodeParser:
         elif self.current_token().get('token_type') == 'Identifier':
             tokenValue = self.variables[self.current_token().get(
                 'token_value')].get('value')
+            try:
+                # integer cast-able strings
+                if tokenValue.isnumeric():
+                    tokenValue = int(tokenValue)
+                # float cast-able strings
+                else:
+                    tokenValue = float(tokenValue)
+            except:
+                pass
             operand2 = tokenValue
             self.match('Identifier')
         elif self.current_token().get('token_type') in self.arithmetic_operators:
