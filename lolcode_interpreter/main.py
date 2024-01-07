@@ -3,6 +3,8 @@ from parserFunction import LOLCodeParser
 import sys
 import re
 from macros import LOLMacros
+import tkinter as tk
+from tkinter import filedialog, Text, messagebox, ttk
 
 # TODO: fix OBTW TLDR
 
@@ -154,29 +156,140 @@ class LOLCodeLexer:
 # Example usage
 
 
-def main():
-    # Check if the correct number of arguments is provided
-    if len(sys.argv) != 2:
-        print("Usage: python main.py <filename>")
-        return
+# def main():
+#     # Check if the correct number of arguments is provided
+#     if len(sys.argv) != 2:
+#         print("Usage: python main.py <filename>")
+#         return
 
-    # Get the file name from the command-line arguments
-    filename = sys.argv[1]
+#     # Get the file name from the command-line arguments
+#     filename = sys.argv[1]
 
-    # Now you can use the 'filename' variable in your code
-    print(f"Interpreting LOLCODE file: {filename}")
+#     # Now you can use the 'filename' variable in your code
+#     print(f"Interpreting LOLCODE file: {filename}")
 
-    # Add your file processing logic here
-    with open(filename, 'r') as f:
-        file_content = f.read()
+#     # Add your file processing logic here
+#     with open(filename, 'r') as f:
+#         file_content = f.read()
 
-    lexer = LOLCodeLexer(file_content)
-    lexer.tokenize()
-    print(lexer)
+#     lexer = LOLCodeLexer(file_content)
+#     lexer.tokenize()
+#     print(lexer)
 
-    parser = LOLCodeParser(lexer)
-    parser.parse()
+#     parser = LOLCodeParser(lexer)
+#     parser.parse()
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
+
+class Application(tk.Frame):
+    def __init__(self, master=None):
+        super().__init__(master)
+        self.master = master
+        self.pack()
+        self.create_widgets()
+
+    def create_widgets(self):
+        # Upper half
+        self.upper_frame = tk.Frame(self)
+        self.upper_frame.pack(side="top")
+
+        # First column
+        self.first_column = tk.Frame(self.upper_frame)
+        self.first_column.pack(side="left", padx=5)
+
+        self.file_location_frame = tk.Frame(self.first_column)
+        self.file_location_frame.pack(fill=tk.X)
+        self.file_location_frame.grid_columnconfigure(0, weight=1)
+
+        self.file_location = tk.Entry(self.file_location_frame)
+        # self.file_location.pack()
+        self.file_location.grid(row=0, column=0, sticky="ew", padx=5)
+
+        self.open_file_button = tk.Button(self.file_location_frame, text="Open File", command=self.open_file)
+        # self.open_file_button.pack()
+        self.open_file_button.grid(row=0, column=1, pady=5)
+
+        self.file_content = tk.Text(self.first_column, height=15)
+        self.file_content.pack()
+
+        # Second and third columns frame
+        self.columns_frame = tk.Frame(self.upper_frame)
+        self.columns_frame.pack(side="left", fill="both", expand=True)
+
+        self.top_label = tk.Label(self.columns_frame, text="LOL CODE Interpreter", pady=5)
+        self.top_label.pack()
+
+        # Second column
+        self.second_column = tk.Frame(self.columns_frame)
+        self.second_column.pack(side="left", fill="both", expand=True, padx=5)
+
+        self.tokens_label = tk.Label(self.second_column, text="Lexemes", pady=5)
+        self.tokens_label.pack()
+
+        self.tokens_table = ttk.Treeview(self.second_column, columns=("Lexeme", "Classification"), show="headings")
+        self.tokens_table.heading("Lexeme", text="Lexeme")
+        self.tokens_table.heading("Classification", text="Classification")
+        self.tokens_table.pack()
+
+        # Third column
+        self.third_column = tk.Frame(self.columns_frame)
+        self.third_column.pack(side="left", fill="both", expand=True, padx=5)
+
+        self.symbol_table_label = tk.Label(self.third_column, text="SYMBOL TABLE", pady=5)
+        self.symbol_table_label.pack()
+
+        self.symbol_table = ttk.Treeview(self.third_column, columns=("Identifier", "Value"), show="headings")
+        self.symbol_table.heading("Identifier", text="Identifier")
+        self.symbol_table.heading("Value", text="Value")
+        self.symbol_table.pack()
+
+        # Execute button
+        self.execute_button = tk.Button(self, text="EXECUTE", command=self.execute)
+        self.execute_button.pack(fill=tk.X, padx=10, pady=10)
+
+        # Lower half
+        self.lower_frame = tk.Frame(self)
+        self.lower_frame.pack(side="bottom", fill=tk.X)
+
+        self.console = tk.Text(self.lower_frame)
+        self.console.pack(fill=tk.BOTH, expand=True)
+
+    def open_file(self):
+        # Open file dialog and update file_location and file_content
+        filename = filedialog.askopenfilename()
+        with open(filename, 'r') as f:
+            file_content = f.read()
+        self.file_location.delete(0, tk.END)
+        self.file_location.insert(0, filename)
+        self.file_content.delete('1.0', tk.END)
+        self.file_content.insert(tk.END, file_content)
+
+    def execute(self):
+        # Save file, update tokens_table, symbol_table, and console
+        filename = self.file_location.get()
+        file_content = self.file_content.get('1.0', tk.END)
+        with open(filename, 'w') as f:
+            f.write(file_content)
+        lexer = LOLCodeLexer(file_content)
+        lexer.tokenize()
+        self.tokens_table.delete(*self.tokens_table.get_children())
+        for token in lexer.get_tokens():
+            self.tokens_table.insert('', 'end', values=(token['value'], token['type']))
+        # Update symbol_table and console widgets if necessary
+        parser = LOLCodeParser(lexer)
+        parser.parse()
+
+        self.symbol_table.delete(*self.symbol_table.get_children())
+
+        # Insert the implicit IT variable at the start of the symbol table
+        self.symbol_table.insert('', 'end', values=('IT', parser.it))
+
+        for identifier, value in parser.variables.items():
+            self.symbol_table.insert('', 'end', values=(identifier, value))
+
+root = tk.Tk()
+root.title("FLOWERS MARKET LOLCODE Interpreter")
+app = Application(master=root)
+app.mainloop()
