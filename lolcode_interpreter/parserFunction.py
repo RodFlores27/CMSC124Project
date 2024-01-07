@@ -307,50 +307,6 @@ class LOLCodeParser:
 
         return operand
 
-    def comparison_expr(self):
-        self.comparing = True
-        operator = self.comparison_operator().get('type')
-        print("Operation: ", operator)
-
-        operand1 = self.fetchOperand()
-        self.comparing = False
-        self.match(self.macros.AN)
-        operand2 = self.fetchOperand()
-        self.comparing = False
-
-        print("Operand 1:", operand1)
-        print("Operand 2:", operand2)
-
-        answer = None
-        if operator == 'Equality Operator':
-            # Perform action for equality operator
-            answer = operand1 == operand2
-        elif operator == 'Inequality Operator':
-            # Perform action for inequality operator
-            answer = operand1 != operand2
-
-        # flag to set if comparing. Needed because comparing must disable implicit typecasting
-        self.comparing = False
-
-        # assign values for implicit variable self.it
-        self.it['type'] = 'Troof'
-        self.it['value'] = answer
-        print("Implicit IT variable: ", self.it)
-
-        return answer
-
-    def comparison_operator(self):
-        tokenType = None
-        tokenValue = None
-        if (self.current_token().get('type') in self.comparison_operators):
-            tokenType = self.current_token().get('type')
-            tokenValue = self.current_token().get('value')
-            self.match(tokenType)
-        else:
-            raise SyntaxError(
-                f"Unexpected token in expression: {self.current_token()}. Expecting comparison operator")
-        return {'type': tokenType, 'value': tokenValue}
-
     def arithmetic_expr(self):
         operator = self.arithmetic_operator().get('type')
 
@@ -561,4 +517,48 @@ class LOLCodeParser:
         else:
             raise SyntaxError(
                 f"Unexpected token in expression: {self.current_token()}. Expecting bool operator")
+        return {'type': tokenType, 'value': tokenValue}
+
+    def comparison_expr(self):
+        self.comparing = True
+        operator = self.comparison_operator().get('type')
+        print("Operation: ", operator)
+
+        operand1 = self.fetchOperand()
+        self.comparing = False
+        self.match(self.macros.AN)
+        operand2 = self.fetchOperand()
+        self.comparing = False
+
+        print("Operand 1:", operand1)
+        print("Operand 2:", operand2)
+
+        answer = None
+        if operator == 'Equality Operator':
+            # Perform action for equality operator
+            answer = operand1 == operand2
+        elif operator == 'Inequality Operator':
+            # Perform action for inequality operator
+            answer = operand1 != operand2
+
+        # flag to set if comparing. Needed because comparing must disable implicit typecasting
+        self.comparing = False
+
+        # assign values for implicit variable self.it
+        self.it['type'] = 'Troof'
+        self.it['value'] = answer
+        print("Implicit IT variable: ", self.it)
+
+        return answer
+
+    def comparison_operator(self):
+        tokenType = None
+        tokenValue = None
+        if (self.current_token().get('type') in self.comparison_operators):
+            tokenType = self.current_token().get('type')
+            tokenValue = self.current_token().get('value')
+            self.match(tokenType)
+        else:
+            raise SyntaxError(
+                f"Unexpected token in expression: {self.current_token()}. Expecting comparison operator")
         return {'type': tokenType, 'value': tokenValue}
