@@ -51,10 +51,11 @@ class LOLCodeParser:
         elif type(expected_type) == list:
             macroNameOfExpectedType = [attr for attr in dir(
                 self.macros) if getattr(self.macros, attr) == expected_type]
-            if self.current_token().get('value') in expected_type:
+            if self.current_token().get('type') in expected_type:
                 print(self.current_token().get('value'))
                 self.consume_token()
         else:
+            print("Current Token", self.current_token())
             print(
                 f"Syntax Error: Expected {expected_type}: {macroNameOfExpectedType}, but instead found {self.current_token()}")
             self.errored = True
@@ -144,6 +145,10 @@ class LOLCodeParser:
         elif self.current_token().get('type') == 'Switch Statement Start Delimiter':
             self.switch_statement()
             print("switch statement success")
+        # loops
+        elif self.current_token().get('type') == 'Loop Statement Start Delimiter':
+            self.loop()
+            print("loop success")
         else:
             raise ValueError(f"Error: Unrecognized statement found.")
 
@@ -189,6 +194,80 @@ class LOLCodeParser:
         self.match(self.macros.IDENTIFIER)
         self.variables[variable_name] = {'type': 'String', 'value': input()}
         print("Current variable values", self.variables)
+
+    def loop(self):
+        self.match(self.macros.IM_IN_YR)
+        # store current loop Identifier
+        self.currentLoop = self.current_token().get('value')  # name of loop identifier
+        print("Current loop:", self.currentLoop)
+        self.match(self.macros.IDENTIFIER)
+        # Set IncrementType
+        loopIncrementType = None
+        if self.current_token().get('type') == self.macros.NERFIN:
+            loopIncrementType = 'NERFIN'
+        elif self.current_token().get('type') == self.macros.UPPIN:
+            loopIncrementType = 'UPPIN'
+        self.match([self.macros.NERFIN, self.macros.UPPIN])
+        self.match(self.macros.YR)
+        # set loop counter
+        loopCounter = self.current_token().get(
+            'value')  # get the name of the identifier
+        # assign initial value to reset loopCounter variable in global scope after loop
+        # NOTE: remove if needed loopCounter variable to have value from previous loop
+        loopCounterInitialValue = self.variables[loopCounter]['value']
+        self.match(self.macros.IDENTIFIER)
+        # set loop delimeter
+        loopConditionDelimiter = self.current_token().get('value')
+        self.match([self.macros.TIL, self.macros.WILE])
+        # condition
+        indexOnCondition = self.current_token_index
+        # TIL
+        if loopConditionDelimiter == 'TIL':
+            # while FAIL
+            while self.expression().get('value') in (False, 'FAIL'):
+                # run statements inside loop
+                while self.current_token().get('type') not in (self.macros.IM_OUTTA_YR, self.macros.GTFO):
+                    self.statement()
+                # update loop-related variables
+                if self.current_token().get('type') == self.macros.IM_OUTTA_YR:
+                    if loopIncrementType == 'UPPIN':
+                        self.variables[loopCounter]['value'] += 1
+                    elif loopIncrementType == 'NERFIN':
+                        self.variables[loopCounter]['value'] -= 1
+                    # return token_index to where condition was
+                    self.current_token_index = indexOnCondition
+                elif self.current_token().get('type') == self.macros.GTFO:
+                    self.match(self.macros.GTFO)
+                    break
+            # once the condition is True or GTFO is met, skip all line until IM_OUTTA_YR
+            while self.current_token().get('type') != self.macros.IM_OUTTA_YR:
+                self.consume_token()
+        # WILE
+        if loopConditionDelimiter == 'WILE':
+            # while WIN
+            while self.expression().get('value') in (True, 'WIN'):
+                # run statements inside loop
+                while self.current_token().get('type') not in (self.macros.IM_OUTTA_YR, self.macros.GTFO):
+                    self.statement()
+                # update loop-related variables
+                if self.current_token().get('type') == self.macros.IM_OUTTA_YR:
+                    if loopIncrementType == 'UPPIN':
+                        self.variables[loopCounter]['value'] += 1
+                    elif loopIncrementType == 'NERFIN':
+                        self.variables[loopCounter]['value'] -= 1
+                    # return token_index to where condition was
+                    self.current_token_index = indexOnCondition
+                elif self.current_token().get('type') == self.macros.GTFO:
+                    self.match(self.macros.GTFO)
+                    break
+            # once the condition is False or GTFO is met, skip all line until IM_OUTTA_YR
+            while self.current_token().get('type') != self.macros.IM_OUTTA_YR:
+                self.consume_token()
+        self.match(self.macros.IM_OUTTA_YR)
+        self.match(self.macros.IDENTIFIER)
+        # reset loopCounter variable
+        # NOTE: remove if needed loopCounter variable to have value from previous loop
+        self.variables[loopCounter]['value'] = loopCounterInitialValue
 
     def switch_statement(self):
         self.match(self.macros.WTF)
@@ -347,20 +426,21 @@ class LOLCodeParser:
         elif self.current_token().get('type') == 'Identifier':
             tokenValue = self.variables[self.current_token().get(
                 'value')].get('value')
-            try:
-                # integer cast-able strings
-                if tokenValue.isnumeric():
-                    tokenValue = int(tokenValue)
-                # float cast-able strings
-                else:
-                    tokenValue = float(tokenValue)
-            except:
-                if self.comparing == True:
-                    print("here")
-                    raise SyntaxError(
-                        f"Invalid token for comparison expression: {self.current_token()}. Automatic Typecasting is disabled.")
-                # TODO: put appropriate error message here.
-                pass
+            if type(tokenValue) == str:
+                try:
+                    # integer cast-able strings
+                    if tokenValue.isnumeric():
+                        tokenValue = int(tokenValue)
+                    # float cast-able strings
+                    else:
+                        tokenValue = float(tokenValue)
+                except:
+                    if self.comparing == True:
+                        print("here")
+                        raise SyntaxError(
+                            f"Invalid token for comparison expression: {tokenValue}. Automatic Typecasting is disabled.")
+                    # TODO: put appropriate error message here.
+                    pass
             operand = tokenValue
             self.match('Identifier')
         # string literal
