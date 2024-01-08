@@ -18,7 +18,7 @@ class LOLCodeParser:
         self.variables = dict()
         # Lists of values
         self.literalTypes = [self.macros.NUMBR, self.macros.NUMBAR,
-                             self.macros.TROOF, 'YARN', self.macros.STRING]
+                             self.macros.TROOF, self.macros.YARN]
         self.arithmetic_operators = [self.macros.SUM_OF, self.macros.DIFF_OF, self.macros.PRODUKT_OF,
                                      self.macros.QUOSHUNT_OF, self.macros.MOD_OF, self.macros.BIGGR_OF, self.macros.SMALLR_OF]
         # flag to disable nesting of infinite arity boolean operations
@@ -73,6 +73,10 @@ class LOLCodeParser:
         self.current_token_index += 1
 
     def program(self):
+        # optional function declarations
+        while self.current_token().get('type') == self.macros.HOW_IZ_I:
+            self.function_declaration()
+        
         self.match(self.macros.HAI)
 
         # Loop over all tokens until KTHXBYE is found
@@ -225,7 +229,7 @@ class LOLCodeParser:
         root.destroy()
         self.output += user_input + "\n"
 
-        self.variables[variable_name] = {'type': 'String', 'value': user_input}
+        self.variables[variable_name] = {'type': 'YARN', 'value': user_input}
         print("Current variable values:", self.variables)
 
     def function_declaration(self):
@@ -479,9 +483,9 @@ class LOLCodeParser:
         if (self.current_token().get('type') in self.literalTypes):
             tokenType = self.current_token().get('type')
 
-            if tokenType == 'Numbr':
+            if tokenType == 'NUMBR':
                 tokenValue = int(self.current_token().get('value'))
-            elif tokenType == 'Numbar':
+            elif tokenType == 'NUMBAR':
                 tokenValue = float(self.current_token().get('value'))
             # string
             else:
@@ -563,9 +567,9 @@ class LOLCodeParser:
             operand = tokenValue
             self.match('Identifier')
         # string literal
-        elif self.current_token().get('type') == 'String':
+        elif self.current_token().get('type') == 'YARN':
             token = self.current_token()
-            print("String token:", token)
+            print("YARN token:", token)
             tokenValue = self.current_token().get('value')
             # typecast
             try:
@@ -582,9 +586,9 @@ class LOLCodeParser:
                 # TODO: put appropriate error message here.
                 pass
             operand = tokenValue
-            self.match('String')
+            self.match('YARN')
         # troof aka boolean
-        elif self.current_token().get('type') == 'Troof':
+        elif self.current_token().get('type') == 'TROOF':
             if self.comparing == True:
                 raise SyntaxError(
                     f"Invalid token for comparison expression: {self.current_token()}. Automatic Typecasting is disabled.")
@@ -644,10 +648,10 @@ class LOLCodeParser:
 
         # assign type of self.it
         if isinstance(answer, (int)):
-            self.it['type'] = 'Numbr'
+            self.it['type'] = 'NUMBR'
 
         elif isinstance(answer, (float)):
-            self.it['type'] = 'Numbar'
+            self.it['type'] = 'NUMBAR'
 
         print("Implicit IT variable: ", self.it)
 
@@ -669,9 +673,9 @@ class LOLCodeParser:
         strings_to_concat = []
         final_string = ""
         while True:
-            if self.current_token().get('type') == 'String':
+            if self.current_token().get('type') == 'YARN':
                 strings_to_concat.append(self.current_token().get('value'))
-                self.match(self.macros.STRING)
+                self.match(self.macros.YARN)
                 if self.current_token().get('type') == 'Operand Connector':
                     self.match(self.macros.AN)
                     continue
@@ -703,7 +707,7 @@ class LOLCodeParser:
             self.match(self.macros.SMOOSH)
             value = self.str_concat()
             self.variables[self.currentIdentifier]['value'] = value
-            self.variables[self.currentIdentifier]['type'] = 'String'
+            self.variables[self.currentIdentifier]['type'] = 'YARN'
         else:
             self.variables[self.currentIdentifier] = self.expression()
         print("Current variables: ", self.variables)
@@ -720,10 +724,55 @@ class LOLCodeParser:
             if self.current_token().get('type') == self.macros.A:
                 self.match(self.macros.A)
             type_to_cast = self.current_token().get('value')
-            self.match(self.literalTypes)
+            # self.match(self.literalTypes)
+            # print("here")
+            self.match(self.macros.TYPE)
+
+            # TODO: NOOB, int, float, string, bool
+            # typecast to string
             if type_to_cast == 'YARN':
-                self.variables[self.currentIdentifier]['type'] = 'String'
-            # TODO apply type_casting of other types
+                if self.variables[self.currentIdentifier]['value'] == None:
+                    raise SyntaxError(
+                        f"Cannot typecast NOOB to YARN")
+                self.variables[self.currentIdentifier]['type'] = 'YARN'
+                self.variables[self.currentIdentifier]['value'] = str(
+                    self.variables[self.currentIdentifier]['value'])
+            # numbr
+            if type_to_cast == 'NUMBR':
+                value = self.variables[self.currentIdentifier]['value']
+                print("value", value)
+                if type(value) == str:
+                    try:
+                        # integer cast-able strings
+                        if value.isnumeric():
+                            value = int(value)
+                        # float cast-able strings
+                        else:
+                            value = float(value)
+                    except:
+                        pass
+                    self.variables[self.currentIdentifier]['value'] = value
+                else:
+                    self.variables[self.currentIdentifier]['value'] = int(
+                        self.variables[self.currentIdentifier]['value'])
+
+                self.variables[self.currentIdentifier]['type'] = 'NUMBR'
+
+            # numbar
+            if type_to_cast == 'NUMBAR':
+                self.variables[self.currentIdentifier]['type'] = 'NUMBAR'
+                self.variables[self.currentIdentifier]['value'] = float(
+                    self.variables[self.currentIdentifier]['value'])
+            # troof
+            if type_to_cast == 'TROOF':
+                self.variables[self.currentIdentifier]['type'] = 'TROOF'
+                value = self.variables[self.currentIdentifier]['value']
+                cast = bool(
+                    self.variables[self.currentIdentifier]['value'])
+                if cast == True and value != 'FAIL':
+                    self.variables[self.currentIdentifier]['value'] = 'WIN'
+                else:
+                    self.variables[self.currentIdentifier]['value'] = 'FAIL'
 
             print("Current variables: ", self.variables)
         # varident IS_NOW_A
@@ -805,7 +854,7 @@ class LOLCodeParser:
             self.infinite_booling = False
 
         # assign values for implicit variable self.it
-        self.it['type'] = 'Troof'
+        self.it['type'] = 'TROOF'
         if answer == True or answer == 'WIN':
             self.it['value'] = 'WIN'
         elif answer == False or answer == 'FAIL':
@@ -856,7 +905,7 @@ class LOLCodeParser:
         self.comparing = False
 
         # assign values for implicit variable self.it
-        self.it['type'] = 'Troof'
+        self.it['type'] = 'TROOF'
         self.it['value'] = answer
         print("Implicit IT variable: ", self.it)
 

@@ -76,13 +76,13 @@ class LOLCodeLexer:
 
             # literals
             # Pattern for capturing floating point literals
-            (r'^\b-?[0-9]+\.[0-9]+\b', 'Numbar'),
+            (r'^\b-?[0-9]+\.[0-9]+\b', 'NUMBAR'),
             # Pattern for capturing integer literals
-            (r'^\b-?[0-9]+\b', 'Numbr'),
-            (r'^\bWIN\b', 'Troof'),  # Pattern for capturing boolean literals
-            (r'^\bFAIL\b', 'Troof'),  # Pattern for capturing boolean literals
+            (r'^\b-?[0-9]+\b', 'NUMBR'),
+            (r'^\bWIN\b', 'TROOF'),  # Pattern for capturing boolean literals
+            (r'^\bFAIL\b', 'TROOF'),  # Pattern for capturing boolean literals
             # Pattern for capturing string literals
-            (r'"([^"]*"*(?!""))(?=[^+])*"', 'String'),
+            (r'"([^"]*"*(?!""))(?=[^+])*"', 'YARN'),
             # Pattern for capturing type literals
             (r'^\b(NUMBR|NUMBAR|TROOF|YARN)\b', 'Type'),
             # identifiers
@@ -111,7 +111,7 @@ class LOLCodeLexer:
                             line = ''
                             break
 
-                        if token_type == 'String':
+                        if token_type == 'YARN':
                             # Remove the start and end quotes
                             token_value = token_value[1:-1]
 
@@ -122,7 +122,7 @@ class LOLCodeLexer:
                         if token_type == 'Identifier':
                             variable_name = match.group().strip()  # Remove leading and trailing whitespace
                             self.variable_names.add(variable_name)
-                        elif token_type == 'String':
+                        elif token_type == 'YARN':
                             string_literal = token_value
                             self.string_literals.append(string_literal)
                         elif token_type == self.macros.BTW:  # 'Single Line Comment Delimiter'
