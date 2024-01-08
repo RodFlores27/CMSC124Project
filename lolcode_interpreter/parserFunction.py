@@ -1,10 +1,12 @@
 import re
 from macros import LOLMacros
 from decimal import Decimal
+import tkinter as tk
+from tkinter import simpledialog
 
 
 class LOLCodeParser:
-    def __init__(self, lexer):
+    def __init__(self, lexer, console):
         self.lexer = lexer
         self.tokens = lexer.get_tokens()
         self.current_token_index = 0
@@ -31,6 +33,11 @@ class LOLCodeParser:
         # for tracing function declarations and calls
         self.functionDeclarations = dict()
         self.functionCalls = dict()
+
+        self.output = ""
+        print("Output:", self.output)
+
+        self.console = console
 
     # start
     def parse(self):
@@ -189,12 +196,27 @@ class LOLCodeParser:
             else:
                 string_to_print += str(operand.get('value'))
         print(string_to_print)  # Don't remove
+        self.output += string_to_print + "\n"
 
     def input_statement(self):
         self.match(self.macros.GIMMEH)
         variable_name = self.current_token().get('value')
         self.match(self.macros.IDENTIFIER)
-        self.variables[variable_name] = {'type': 'String', 'value': input()}
+
+        # Update the console with the current output
+        self.console.config(state="normal")
+        self.console.delete('1.0', tk.END)
+        self.console.insert(tk.END, self.output)
+        self.console.config(state="disabled")
+
+        # Get user input from a dialog box
+        root = tk.Tk()
+        root.withdraw()  # Hide the main window
+        user_input = simpledialog.askstring("Input", "Please enter a value for " + variable_name + ": ")
+        root.destroy()
+        self.output += user_input + "\n"
+
+        self.variables[variable_name] = {'type': 'String', 'value': user_input}
         print("Current variable values:", self.variables)
 
     def function_declaration(self):
