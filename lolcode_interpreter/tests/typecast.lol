@@ -1,6 +1,6 @@
 HAI 
     WAZZUP
-        I HAS A thing1 ITZ 3
+        I HAS A thing1 ITZ 3.0
     BUHBYE
 
     MAEK thing1 YARN
