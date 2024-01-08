@@ -214,7 +214,7 @@ class LOLCodeParser:
             'value')  # get the name of the identifier
         # assign initial value to reset loopCounter variable in global scope after loop
         # NOTE: remove if needed loopCounter variable to have value from previous loop
-        loopCounterInitialValue = self.variables[loopCounter]['value']
+        # loopCounterInitialValue = self.variables[loopCounter]['value']
         self.match(self.macros.IDENTIFIER)
         # set loop delimeter
         loopConditionDelimiter = self.current_token().get('value')
@@ -264,10 +264,14 @@ class LOLCodeParser:
             while self.current_token().get('type') != self.macros.IM_OUTTA_YR:
                 self.consume_token()
         self.match(self.macros.IM_OUTTA_YR)
-        self.match(self.macros.IDENTIFIER)
+        if self.current_token().get('value') == self.currentLoop:
+            self.match(self.macros.IDENTIFIER)
+        else:
+            raise SyntaxError(
+                f"Unexpected token in expression: {self.current_token()}. Expecting current loop identifier.")
         # reset loopCounter variable
         # NOTE: remove if needed loopCounter variable to have value from previous loop
-        self.variables[loopCounter]['value'] = loopCounterInitialValue
+        # self.variables[loopCounter]['value'] = loopCounterInitialValue
 
     def switch_statement(self):
         self.match(self.macros.WTF)
