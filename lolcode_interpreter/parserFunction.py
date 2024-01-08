@@ -11,7 +11,8 @@ class LOLCodeParser:
         self.errored = False
         self.macros = LOLMacros()
 
-        self.it = dict()  # Implicit 'it' variable. See variables section on specifications and expression statements
+        # Implicit 'it' variable. See variables section on specifications and expression statements
+        self.it = {'type': 'Untyped', 'value': 'NOOB'}
 
         self.currentIdentifier = None
 
@@ -38,6 +39,9 @@ class LOLCodeParser:
         self.comparison_operators = [
             self.macros.BOTH_SAEM, self.macros.DIFFRINT]
         print("Comparison Operators:", self.comparison_operators)
+
+        self.functionDeclarations = dict()
+        self.functionCalls = dict()
 
     def parse(self):
         self.program()
@@ -149,6 +153,14 @@ class LOLCodeParser:
         elif self.current_token().get('type') == 'Loop Statement Start Delimiter':
             self.loop()
             print("loop success")
+        # function declaration
+        elif self.current_token().get('type') == 'Function Declaration Start Delimiter':
+            self.function_declaration()
+            print("function declaration success")
+        # function call
+        elif self.current_token().get('type') == 'Function Call Start Delimiter':
+            self.function_call()
+            print("function call success")
         else:
             raise ValueError(f"Error: Unrecognized statement found.")
 
@@ -172,7 +184,7 @@ class LOLCodeParser:
     def print_statement(self, operands):
         # Operand accumulation for recursion
         operands.append(self.expression())
-        # print("Print Operands", operands)
+        print("Print Operands", operands)
 
         # infinite arity implementation
         if self.current_token().get('type') == self.macros.PLUS:
@@ -193,7 +205,81 @@ class LOLCodeParser:
         variable_name = self.current_token().get('value')
         self.match(self.macros.IDENTIFIER)
         self.variables[variable_name] = {'type': 'String', 'value': input()}
+        # self.variables[variable_name] = {'type': 'String', 'value': textBoxValue}
         print("Current variable values", self.variables)
+
+    def function_declaration(self):
+        function_declaration_token_index = self.current_token_index
+        self.match(self.macros.HOW_IZ_I)
+        # record indices when functionDeclarations were made
+        self.functionDeclarations[self.current_token().get(
+            'value')] = function_declaration_token_index
+        print("Function Declarations: ",
+              self.functionDeclarations)
+        # skip lines until function_declaration terminator
+        while self.current_token().get('type') != self.macros.IF_U_SAY_SO:
+            self.consume_token()
+        self.match(self.macros.IF_U_SAY_SO)
+
+    def function_call(self):
+        self.match(self.macros.I_IZ)
+        # setup function call arguments
+        function = self.current_token().get('value')
+        self.match(self.macros.IDENTIFIER)
+        # get all arguments
+        current_function_arguments = list()
+        while self.current_token().get('type') == self.macros.YR:
+            self.match(self.macros.YR)
+            current_function_arguments.append(self.expression())
+            if self.current_token().get('type') == self.macros.AN:
+                self.match(self.macros.AN)
+        print("currentFunctionName: ", function)
+        print("currentFuncArguments: ", current_function_arguments)
+        self.match(self.macros.MKAY)
+
+        # jump back here after function call
+        previous_token_index = self.current_token_index
+
+        # FUNCTION CALL READ
+        # Jump to function declaration and perform
+        self.current_token_index = self.functionDeclarations[function]
+        print("curr Index:", self.current_token_index)
+        self.match(self.macros.HOW_IZ_I)
+        self.match(self.macros.IDENTIFIER)
+
+        argument_index = 0
+        local_variables = list()
+        while self.current_token().get('type') == self.macros.YR:
+            self.match(self.macros.YR)
+            # add identifier to variables; identifier value will match the argument
+            local_variables.append(self.current_token().get('value'))
+            print("local_variables", local_variables)
+            self.variables[self.current_token().get(
+                'value')] = current_function_arguments[argument_index]
+            argument_index += 1
+            print("now variabs", self.variables)
+            self.match(self.macros.IDENTIFIER)
+            if self.current_token().get('type') == self.macros.AN:
+                self.match(self.macros.AN)
+
+        self.it['type'] = 'Untyped'
+        self.it['value'] = 'NOOB'
+        while self.current_token().get('type') not in (self.macros.FOUND_YR, self.macros.GTFO, self.macros.IF_U_SAY_SO):
+            self.statement()
+
+        if self.current_token().get('type') == self.macros.FOUND_YR:
+            self.match(self.macros.FOUND_YR)
+            self.it = self.expression()
+        elif self.current_token().get('type') == self.macros.GTFO:
+            self.match(self.macros.GTFO)
+
+        self.match(self.macros.IF_U_SAY_SO)
+        # remove local variables in self.variables
+        for variable in local_variables:
+            del self.variables[variable]
+
+        # return to previous program counter
+        self.current_token_index = previous_token_index
 
     def loop(self):
         self.match(self.macros.IM_IN_YR)
@@ -386,10 +472,16 @@ class LOLCodeParser:
 
         # identifier return value
         elif (self.current_token().get('type') == 'Identifier'):
-            tokenType = self.variables[self.current_token().get(
-                'value')].get('type')
-            tokenValue = self.variables[self.current_token().get(
-                'value')].get('value')
+            # implicit IT variable
+            if self.current_token().get('value') == 'IT':
+                tokenType = self.it.get('type')
+                tokenValue = self.it.get('value')
+                print("here")
+            else:
+                tokenType = self.variables[self.current_token().get(
+                    'value')].get('type')
+                tokenValue = self.variables[self.current_token().get(
+                    'value')].get('value')
             self.match('Identifier')
 
         # arithmetic expression return value
@@ -405,6 +497,11 @@ class LOLCodeParser:
         # comparison expression return value
         elif (self.current_token().get('type') in self.comparison_operators):
             self.comparison_expr()
+            tokenType = self.it.get('type')
+            tokenValue = self.it.get('value')
+        # function call return value
+        elif self.current_token().get('type') == self.macros.I_IZ:
+            self.function_call()
             tokenType = self.it.get('type')
             tokenValue = self.it.get('value')
         else:
